@@ -16,6 +16,8 @@ func main() {
 
 	router := gin.Default()
 
+	router.GET("/events", controllers.ListEvents)
+	router.GET("/events/:id", controllers.ListEventByID)
 	router.POST("/events", controllers.CreateEvent)
 
 	err := router.Run(":8080")
