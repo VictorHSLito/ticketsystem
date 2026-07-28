@@ -6,13 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/victorhslito/ticketsystem/internal/controllers"
 	"github.com/victorhslito/ticketsystem/internal/database"
-	"github.com/victorhslito/ticketsystem/internal/domain"
 )
 
 func main() {
 	database.CreateDatabaseConnection()
-
-	database.DBConnection.AutoMigrate(&domain.Event{})
 
 	router := gin.Default()
 

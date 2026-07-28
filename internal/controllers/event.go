@@ -14,6 +14,13 @@ type EventDTO struct {
 	Description string `json:"description" binding:"required"`
 }
 
+type Pagination struct {
+	PageNumber int `json:"pageNumber"`
+	PageSize   int `json:"pageSize"`
+	TotalItems int `json:"totalItems"`
+	TotalPages int `json:"totalPages"`
+}
+
 func CreateEvent(c *gin.Context) {
 	var eventDTO EventDTO
 
@@ -36,13 +43,20 @@ func ListEvents(c *gin.Context) {
 	var eventDTO []EventDTO
 	var events []domain.Event
 
-	database.DBConnection.Find(&events)
+	database.DBConnection.Scopes(database.Paginate(c)).Find(&events)
 
 	for _, event := range events {
 		eventDTO = append(eventDTO, EventDTO{event.Name, event.Description})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": eventDTO})
+	c.JSON(http.StatusOK, gin.H{
+		"data": eventDTO, "pagination": Pagination{
+			c.GetInt("page"),
+			c.GetInt("pageSize"),
+			len(eventDTO),
+			c.GetInt("totalPages"),
+		},
+	})
 }
 
 func ListEventByID(c *gin.Context) {
