@@ -16,6 +16,7 @@ func main() {
 	router.GET("/events", controllers.ListEvents)
 	router.GET("/events/:id", controllers.ListEventByID)
 	router.POST("/events", controllers.CreateEvent)
+	router.GET("/events/:id/seats", controllers.ListAllSeatsAvailables)
 
 	err := router.Run(":8080")
 	if err != nil {
