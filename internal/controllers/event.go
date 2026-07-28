@@ -40,7 +40,7 @@ func CreateEvent(c *gin.Context) {
 }
 
 func ListEvents(c *gin.Context) {
-	var eventDTO []EventDTO
+	eventDTO := make([]EventDTO, 0)
 	var events []domain.Event
 
 	database.DBConnection.Scopes(database.Paginate(c)).Find(&events)
