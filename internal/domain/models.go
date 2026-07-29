@@ -1,6 +1,8 @@
 package domain
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Event struct {
 	gorm.Model
@@ -9,11 +11,18 @@ type Event struct {
 	Seats       []Seat
 }
 
-type SeatStatus string
+type (
+	SeatStatus    string
+	BookingStatus string
+)
 
 const (
-	StatusAvailable SeatStatus = "AVAILABLE"
-	StatusBooked    SeatStatus = "BOOKED"
+	StatusAvailable SeatStatus    = "AVAILABLE"
+	StatusBooked    SeatStatus    = "BOOKED"
+	Pending         BookingStatus = "PENDING"
+	Confirmed       BookingStatus = "CONFIRMED"
+	Expired         BookingStatus = "EXPIRED"
+	Canceled        BookingStatus = "CANCELED"
 )
 
 type Seat struct {
@@ -21,4 +30,25 @@ type Seat struct {
 	EventID    uint
 	SeatCode   string
 	SeatStatus SeatStatus
+}
+
+type User struct {
+	gorm.Model
+	Username string
+	Email    string
+	Password string
+	Bookings []Booking
+}
+
+type Booking struct {
+	gorm.Model
+	UserID        uint
+	BookingStatus BookingStatus
+}
+
+type Ticket struct {
+	ID         uint
+	ExternalID string
+	EventID    uint
+	SeatID     uint
 }
