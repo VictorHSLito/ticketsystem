@@ -46,16 +46,19 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	event := createEventAndSeats(eventDTO)
+	event := createEvent(eventDTO)
 
 	if event == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error trying to create event"})
 		return
 	}
+
+	c.Header("Location", "/events/"+strconv.FormatUint(uint64(event.ID), 10))
+
 	c.JSON(http.StatusCreated, gin.H{"message": "event created!"})
 }
 
-func createEventAndSeats(eventDTO CreateEventDTO) *domain.Event {
+func createEvent(eventDTO CreateEventDTO) *domain.Event {
 	var event domain.Event
 
 	event.Name = eventDTO.Name
@@ -66,9 +69,15 @@ func createEventAndSeats(eventDTO CreateEventDTO) *domain.Event {
 		return nil
 	}
 
-	seats := make([]domain.Seat, eventDTO.EventSettings.NumberOfSeats)
+	seats := createSeats(event, eventDTO.EventSettings.NumberOfSeats)
+	event.Seats = seats
 
-	for i := range eventDTO.EventSettings.NumberOfSeats {
+	return &event
+}
+
+func createSeats(event domain.Event, numberOfSeats int) []domain.Seat {
+	seats := make([]domain.Seat, numberOfSeats)
+	for i := range numberOfSeats {
 		seats[i] = domain.Seat{
 			EventID:    event.ID,
 			SeatCode:   "SA" + strconv.Itoa(i),
@@ -80,9 +89,8 @@ func createEventAndSeats(eventDTO CreateEventDTO) *domain.Event {
 		log.Println("[ERROR] - Error trying to create seats!")
 		return nil
 	}
-	event.Seats = seats
 
-	return &event
+	return seats
 }
 
 func ListEvents(c *gin.Context) {
