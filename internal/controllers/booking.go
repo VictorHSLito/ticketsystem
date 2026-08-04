@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
+	"gorm.io/gorm"
 )
 
 type CreateBookingDTO struct {
@@ -19,8 +21,6 @@ type CreateBookingDTO struct {
 
 func CreateBooking(c *gin.Context) {
 	var bookingDTO CreateBookingDTO
-	var user domain.User
-	var event domain.Event
 
 	if err := c.ShouldBindJSON(&bookingDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -28,27 +28,51 @@ func CreateBooking(c *gin.Context) {
 	}
 
 	// Recupera o usuário
-	database.DBConnection.Where("id = ?", bookingDTO.UserID).Find(&user)
+	var user domain.User
+	if err := database.DBConnection.First(&user, bookingDTO.UserID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found!"})
+			return
+		}
 
-	database.DBConnection.Preload("Seats").Where("id = ?", bookingDTO.EventID).Find(&event)
-
-	// Cria o dado de booking
-	booking := domain.Booking{
-		UserID:        bookingDTO.UserID,
-		BookingStatus: domain.Pending,
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
 	}
 
-	database.DBConnection.Create(&booking)
+	// Recupera o evento
+	var event domain.Event
+	if err := database.DBConnection.Preload("Seats").First(&event, bookingDTO.EventID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Event not found!"})
+			return
+		}
 
-	// Cria os tickets e vincula a reserva
-	createTickets(event.Seats, bookingDTO.Seats, booking.ID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		return
+	}
+
+	bookingSeats := verifySeats(event.Seats, bookingDTO.Seats)
+
+	if len(bookingSeats) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No valid seats or available seats"})
+		return
+	}
+
+	// Cria o dado de booking
+	booking, err := createBookingData(bookingDTO.UserID, bookingSeats)
+	if err != nil {
+		log.Println("[ERROR] - Failed to process booking transaction:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process booking"})
+		return
+	}
 
 	// Anexa o booking com o usuário
 	user.Bookings = append(user.Bookings, booking)
 
 	c.Header("Location", "/booking/"+strconv.FormatUint(uint64(booking.ID), 10))
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Booked created!",
+		"message":   "Booking created successfully!",
+		"bookingId": booking.ID,
 	})
 }
 
@@ -57,6 +81,45 @@ func ListBookingByID(c *gin.Context) {
 
 	var booking domain.Booking
 	database.DBConnection.Where("id = ?", bookingID).Find(&booking)
+}
+
+func createBookingData(userID uint, bookedSeats map[uint]string) (domain.Booking, error) {
+	var booking domain.Booking
+
+	database.DBConnection.Transaction(func(tx *gorm.DB) error {
+		booking = domain.Booking{
+			UserID:        userID,
+			BookingStatus: domain.Pending,
+		}
+
+		if err := tx.Create(&booking).Error; err != nil {
+			return err
+		}
+
+		tickets := make([]domain.Ticket, 0, len(bookedSeats))
+		var seatIDs []uint
+		for seatID := range bookedSeats {
+			seatIDs = append(seatIDs, seatID)
+			tickets = append(tickets, domain.Ticket{
+				ExternalID: uuid.NewString(),
+				BookingID:  booking.ID,
+				SeatID:     seatID,
+			})
+		}
+
+		if err := tx.Create(&tickets).Error; err != nil {
+			return err
+		}
+
+		// Atualiza o status dos assentos
+		if err := tx.Model(&domain.Seat{}).Where("id IN ?", seatIDs).Update("seat_status", domain.StatusBooked).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return booking, nil
 }
 
 func createTickets(seats []domain.Seat, seatsCodes []string, bookingID uint) {
@@ -90,13 +153,13 @@ func createTickets(seats []domain.Seat, seatsCodes []string, bookingID uint) {
 
 func verifySeats(seats []domain.Seat, seatCodes []string) map[uint]string {
 	bookingSeats := make(map[uint]string)
+
 	for _, seat := range seats {
 		for _, seatCode := range seatCodes {
 			if seat.SeatCode == seatCode {
 				bookingSeats[seat.ID] = seatCode
 			}
 		}
-		seat.SeatStatus = domain.StatusBooked
 	}
 
 	return bookingSeats
