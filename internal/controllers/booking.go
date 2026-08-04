@@ -17,7 +17,6 @@ type CreateBookingDTO struct {
 	Seats   []string `json:"seats" binding:"required"`
 }
 
-// TODO: Encrypt user password...
 func CreateBooking(c *gin.Context) {
 	var bookingDTO CreateBookingDTO
 	var user domain.User

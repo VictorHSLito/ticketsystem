@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type createUserDTO struct {
@@ -33,7 +35,13 @@ func CreateUser(c *gin.Context) {
 
 	user.Username = createUserDTO.Username
 	user.Email = createUserDTO.Email
-	user.Password = createUserDTO.Password
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(createUserDTO.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("error trying to encrypt password, err: ", err.Error())
+	}
+
+	user.Password = string(hashedPassword)
 
 	database.DBConnection.Create(&user)
 
