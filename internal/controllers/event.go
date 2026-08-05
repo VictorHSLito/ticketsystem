@@ -42,14 +42,14 @@ func CreateEvent(c *gin.Context) {
 	var eventDTO CreateEventDTO
 
 	if err := c.ShouldBindJSON(&eventDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(ErrBindingResources)
 		return
 	}
 
 	event := createEvent(eventDTO)
 
 	if event == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error trying to create event"})
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -118,7 +118,7 @@ func ListEventByID(c *gin.Context) {
 
 	event, err := gorm.G[domain.Event](database.DBConnection).Where("id = ?", id).First(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{})
+		c.Error(ErrEventNotFound)
 		return
 	}
 
@@ -133,7 +133,7 @@ func ListAllSeatsAvailables(c *gin.Context) {
 
 	err := query.Scopes(database.Paginate(c)).Find(&seats).Error
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found!"})
+		c.Error(ErrEventNotFound)
 		return
 	}
 

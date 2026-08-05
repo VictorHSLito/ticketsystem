@@ -19,11 +19,12 @@ type CreateBookingDTO struct {
 	Seats   []string `json:"seats" binding:"required"`
 }
 
+// TODO: Validar cenários de concorrência
 func CreateBooking(c *gin.Context) {
 	var bookingDTO CreateBookingDTO
 
 	if err := c.ShouldBindJSON(&bookingDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(ErrBindingResources)
 		return
 	}
 
@@ -31,11 +32,11 @@ func CreateBooking(c *gin.Context) {
 	var user domain.User
 	if err := database.DBConnection.First(&user, bookingDTO.UserID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "User not found!"})
+			c.Error(ErrUserNotFound)
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -43,11 +44,11 @@ func CreateBooking(c *gin.Context) {
 	var event domain.Event
 	if err := database.DBConnection.Preload("Seats").First(&event, bookingDTO.EventID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Event not found!"})
+			c.Error(ErrEventNotFound)
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -122,35 +123,7 @@ func createBookingData(userID uint, bookedSeats map[uint]string) (domain.Booking
 	return booking, nil
 }
 
-func createTickets(seats []domain.Seat, seatsCodes []string, bookingID uint) {
-	bookedSeats := verifySeats(seats, seatsCodes)
-	tickets := make([]domain.Ticket, 0, len(bookedSeats))
-
-	for seatID := range bookedSeats {
-		tickets = append(tickets, domain.Ticket{
-			ExternalID: uuid.NewString(),
-			BookingID:  bookingID,
-			SeatID:     seatID,
-		})
-	}
-
-	if len(tickets) > 0 {
-		if err := database.DBConnection.Create(&tickets).Error; err != nil {
-			log.Println("[ERROR] - Error trying to create tickets:", err)
-			return
-		}
-
-		var seatIDs []uint
-		for seatID := range bookedSeats {
-			seatIDs = append(seatIDs, seatID)
-		}
-
-		if err := database.DBConnection.Model(&domain.Seat{}).Where("id IN ?", seatIDs).Update("seat_status", domain.StatusBooked).Error; err != nil {
-			log.Println("[ERROR] - Error trying to update seat status:", err)
-		}
-	}
-}
-
+// TODO: Adicionar validação em tickets em estado BOOKED
 func verifySeats(seats []domain.Seat, seatCodes []string) map[uint]string {
 	bookingSeats := make(map[uint]string)
 

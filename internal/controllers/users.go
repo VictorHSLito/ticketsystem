@@ -23,7 +23,7 @@ func CreateUser(c *gin.Context) {
 	var createUserDTO createUserDTO
 
 	if err := c.ShouldBindJSON(&createUserDTO); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(ErrBindingResources)
 		return
 	}
 
@@ -31,7 +31,7 @@ func CreateUser(c *gin.Context) {
 	err := database.DBConnection.Where("email = ?", createUserDTO.Email).First(&user).Error
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists!"})
+		c.Error(ErrDuplicatedResource)
 		return
 	}
 
