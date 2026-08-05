@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type createUserDTO struct {
@@ -25,13 +27,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// FIX: It's not showing error message for duplicated users...
-	if err := database.DBConnection.Where("email = ?", createUserDTO.Email).Error; err != nil {
+	var user domain.User
+	err := database.DBConnection.Where("email = ?", createUserDTO.Email).First(&user).Error
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists!"})
 		return
 	}
-
-	var user domain.User
 
 	user.Username = createUserDTO.Username
 	user.Email = createUserDTO.Email
