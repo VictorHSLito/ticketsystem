@@ -23,7 +23,7 @@ type EventsDTO struct {
 }
 
 type EventSettings struct {
-	NumberOfSeats int `json:"numberOfSeats" binding:"required"`
+	NumberOfSeats int `json:"numberOfSeats" binding:"required,gte=10"`
 }
 
 type SeatDTO struct {

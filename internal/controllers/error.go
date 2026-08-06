@@ -107,6 +107,8 @@ func getReasonField(e validator.FieldError) string {
 		return "This field is required"
 	case "email":
 		return "Invalid email format"
+	case "gte":
+		return "The value should be greater"
 	default:
 		return "Failed on rule: " + e.Tag()
 	}
