@@ -35,7 +35,7 @@ type Seat struct {
 type User struct {
 	gorm.Model
 	Username string
-	Email    string
+	Email    string `gorm:"unique"`
 	Password string
 	Bookings []Booking
 }
@@ -49,6 +49,6 @@ type Booking struct {
 type Ticket struct {
 	ID         uint
 	ExternalID string
-	EventID    uint
+	BookingID  uint
 	SeatID     uint
 }
