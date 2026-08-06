@@ -15,15 +15,14 @@ import (
 
 type createUserDTO struct {
 	Username string `json:"username" binding:"required"`
-	Email    string `json:"email" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
 func CreateUser(c *gin.Context) {
 	var createUserDTO createUserDTO
 
-	if err := c.ShouldBindJSON(&createUserDTO); err != nil {
-		c.Error(ErrBindingResources)
+	if !BindAndValidate(c, &createUserDTO) {
 		return
 	}
 

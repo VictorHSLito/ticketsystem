@@ -5,24 +5,32 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
+type InvalidParam struct {
+	Name   string `json:"name"`
+	Reason string `json:"reason"`
+}
+
 type ApiError struct {
-	Status  int    `json:"-"`
-	Title   string `json:"title"`
-	Message string `json:"message"`
+	Status        int            `json:"-"`
+	Title         string         `json:"title"`
+	Type          string         `json:"type"`
+	Detail        string         `json:"detail"`
+	Instance      string         `json:"instance,omitempty"`
+	InvalidParams []InvalidParam `json:"invalid_params,omitempty"`
 }
 
 func (e *ApiError) Error() string {
-	return e.Message
+	return e.Detail
 }
 
 var (
-	ErrUserNotFound       = &ApiError{http.StatusNotFound, "NOT_FOUND", "User not found!"}
-	ErrEventNotFound      = &ApiError{http.StatusNotFound, "EVENT_NOT_FOUND", "Event not found!"}
-	ErrInternalServer     = &ApiError{http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "An unexpected error occurred"}
-	ErrBindingResources   = &ApiError{http.StatusBadRequest, "BAD_REQUEST", "Some fields are missing or in wrong format"}
-	ErrDuplicatedResource = &ApiError{http.StatusBadRequest, "BAD_REQUEST", "Duplicated resource!"}
+	ErrUserNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "User not found!"}
+	ErrEventNotFound      = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Event not found!"}
+	ErrInternalServer     = &ApiError{Status: http.StatusInternalServerError, Type: "about:blank", Title: "Internal Server Error", Detail: "An unexpected error occurred"}
+	ErrDuplicatedResource = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Duplicated resource!"}
 )
 
 func ErrorHandler() gin.HandlerFunc {
@@ -37,14 +45,69 @@ func ErrorHandler() gin.HandlerFunc {
 
 		if apiError, ok := errors.AsType[*ApiError](err); ok {
 			c.JSON(apiError.Status, gin.H{
-				"title":   apiError.Title,
-				"message": apiError.Message,
+				"type":           apiError.Type,
+				"title":          apiError.Title,
+				"status":         apiError.Status,
+				"detail":         apiError.Detail,
+				"instance":       c.Request.RequestURI,
+				"invalid_params": apiError.InvalidParams,
 			})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"title":   ErrInternalServer.Title,
-				"message": ErrInternalServer.Message,
-			})
+			return
 		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"type":     "about:blank",
+			"title":    ErrInternalServer.Title,
+			"status":   http.StatusInternalServerError,
+			"detail":   ErrInternalServer.Detail,
+			"instance": c.Request.RequestURI,
+		})
+	}
+}
+
+func BindAndValidate(c *gin.Context, obj interface{}) bool {
+	if err := c.ShouldBindJSON(obj); err != nil {
+		var validationErrs validator.ValidationErrors
+		if errors.As(err, &validationErrs) {
+			var invalidParams []InvalidParam
+
+			for _, e := range validationErrs {
+				invalidParams = append(invalidParams, InvalidParam{
+					Name:   e.Field(),
+					Reason: getReasonField(e),
+				})
+			}
+
+			c.Error(&ApiError{
+				Status:        http.StatusBadRequest,
+				Title:         "Validation Error",
+				Type:          "about:blank",
+				Detail:        "The request contain invalid fields",
+				Instance:      c.Request.RequestURI,
+				InvalidParams: invalidParams,
+			})
+
+			return false
+		}
+
+		c.Error(&ApiError{
+			Status: http.StatusBadRequest,
+			Type:   "about:blank",
+			Title:  "Malformed JSON",
+			Detail: err.Error(), Instance: c.Request.RequestURI,
+		})
+
+	}
+	return true
+}
+
+func getReasonField(e validator.FieldError) string {
+	switch e.Tag() {
+	case "required":
+		return "This field is required"
+	case "email":
+		return "Invalid email format"
+	default:
+		return "Failed on rule: " + e.Tag()
 	}
 }

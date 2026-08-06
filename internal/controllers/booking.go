@@ -23,8 +23,7 @@ type CreateBookingDTO struct {
 func CreateBooking(c *gin.Context) {
 	var bookingDTO CreateBookingDTO
 
-	if err := c.ShouldBindJSON(&bookingDTO); err != nil {
-		c.Error(ErrBindingResources)
+	if !BindAndValidate(c, &bookingDTO) {
 		return
 	}
 

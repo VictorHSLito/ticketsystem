@@ -41,8 +41,7 @@ type Pagination struct {
 func CreateEvent(c *gin.Context) {
 	var eventDTO CreateEventDTO
 
-	if err := c.ShouldBindJSON(&eventDTO); err != nil {
-		c.Error(ErrBindingResources)
+	if !BindAndValidate(c, &eventDTO) {
 		return
 	}
 
