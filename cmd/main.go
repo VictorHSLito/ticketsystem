@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/aws"
 	"github.com/victorhslito/ticketsystem/internal/controllers"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -11,6 +14,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	database.CreateDatabaseConnection()
 
 	router := gin.Default()
@@ -26,7 +31,19 @@ func main() {
 	routes.RegisterEventsGroup(router)
 	routes.RegisterUserGroup(router)
 
-	err := router.Run(":8080")
+	cfg := aws.LoadFromEnv()
+
+	sqsClient, err := aws.NewSQSClient(ctx, cfg)
+	if err != nil {
+		log.Fatal("Error trying to connect in SQS", err)
+	}
+
+	queueManager := aws.NewQueueManager(sqsClient)
+
+	queueURL, _ := queueManager.GetQueueUrl(ctx, "check-booking-pending-state")
+	fmt.Println("Queue Manager Connected on Queue: ", queueURL)
+
+	err = router.Run(":8080")
 	if err != nil {
 		log.Fatal("Failed on start server, error: ", err)
 	}
