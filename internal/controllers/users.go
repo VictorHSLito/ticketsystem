@@ -8,20 +8,28 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
+type UserController struct {
+	s *service.UserService
+}
+
 type CreateUserDTO struct {
 	Username string `json:"username" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-func CreateUser(c *gin.Context, s *service.UserService) {
+func NewUserController(s *service.UserService) *UserController {
+	return &UserController{s: s}
+}
+
+func (h *UserController) CreateUser(c *gin.Context) {
 	var createUserDTO CreateUserDTO
 
 	if !BindAndValidate(c, &createUserDTO) {
 		return
 	}
 
-	userID := s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
+	userID := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
 
 	c.Header("Location", "/users/"+strconv.FormatUint(uint64(userID), 10))
 

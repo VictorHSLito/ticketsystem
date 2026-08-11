@@ -14,7 +14,7 @@ type UserService struct {
 	r repository.UserRepository
 }
 
-func (s *UserService) NewUserService(r repository.UserRepository) *UserService {
+func NewUserService(r repository.UserRepository) *UserService {
 	return &UserService{r: r}
 }
 
@@ -36,6 +36,15 @@ func (s *UserService) CreateUser(username, email, password string) uint {
 	s.r.Create(user)
 
 	return user.ID
+}
+
+func (s *UserService) FindByID(userID uint) *domain.User {
+	user, err := s.r.ListByID(userID)
+	if err != nil {
+		return nil
+	}
+
+	return user
 }
 
 func (s *UserService) isUserAlreadyExists(email string) bool {

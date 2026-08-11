@@ -11,6 +11,10 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
+type EventController struct {
+	s *service.EventService
+}
+
 type CreateEventDTO struct {
 	Name          string        `json:"name" binding:"required"`
 	Description   string        `json:"description" binding:"required"`
@@ -38,23 +42,27 @@ type Pagination struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func CreateEvent(c *gin.Context, s *service.EventService) {
+func NewEventController(s *service.EventService) *EventController {
+	return &EventController{s: s}
+}
+
+func (h *EventController) CreateEvent(c *gin.Context) {
 	var eventDTO CreateEventDTO
 
 	if !BindAndValidate(c, &eventDTO) {
 		return
 	}
 
-	eventID := s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
+	eventID := h.s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
 
 	c.Header("Location", "/events/"+strconv.FormatUint(uint64(eventID), 10))
 
 	c.JSON(http.StatusCreated, gin.H{"message": "event created!"})
 }
 
-func ListEvents(c *gin.Context, s *service.EventService) {
+func (h *EventController) ListEvents(c *gin.Context) {
 	var eventDTO []EventsDTO
-	events := s.ListEvents()
+	events := h.s.ListEvents()
 
 	for _, event := range events {
 		eventDTO = append(eventDTO, EventsDTO{event.Name, event.Description})
@@ -71,7 +79,7 @@ func ListEvents(c *gin.Context, s *service.EventService) {
 	})
 }
 
-func ListEventByID(c *gin.Context, s *service.EventService) {
+func (h *EventController) ListEventByID(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -79,7 +87,7 @@ func ListEventByID(c *gin.Context, s *service.EventService) {
 		return
 	}
 
-	event := s.ListByID(uint(eventID))
+	event := h.s.ListByID(uint(eventID))
 
 	if event == nil {
 		c.Error(ErrEventNotFound)
@@ -89,10 +97,10 @@ func ListEventByID(c *gin.Context, s *service.EventService) {
 	c.JSON(http.StatusOK, gin.H{"data": EventsDTO{event.Name, event.Description}})
 }
 
-func ListAllSeatsAvailables(c *gin.Context, s *service.EventService) {
+func (h *EventController) ListAllSeatsAvailables(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
-	seats := s.ListSeatsAvailables(uint(eventID))
+	seats := h.s.ListSeatsAvailables(uint(eventID))
 
 	database.Paginate(c)
 	if err != nil {
