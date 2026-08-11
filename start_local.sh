@@ -4,8 +4,8 @@ echo "Starting up docker..."
 
 docker compose up -d
 
-echo "Waiting for 5 seconds..."
-sleep 5
+echo "Waiting for 15 seconds..."
+sleep 15
 echo "Done waiting..."
 
 echo "Creating AWS SQS Locally..."

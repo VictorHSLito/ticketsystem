@@ -5,27 +5,27 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/controllers"
 )
 
-func RegisterEventsGroup(rg *gin.Engine) {
+func RegisterEventsGroup(rg *gin.Engine, h *controllers.EventController) {
 	events := rg.Group("/events")
 	{
-		events.GET("/", controllers.ListEvents)
-		events.GET("/:id", controllers.ListEventByID)
-		events.POST("/", controllers.CreateEvent)
-		events.GET("/:id/seats", controllers.ListAllSeatsAvailables)
+		events.GET("/", h.ListEvents)
+		events.GET("/:id", h.ListEventByID)
+		events.POST("/", h.CreateEvent)
+		events.GET("/:id/seats", h.ListAllSeatsAvailables)
 
 	}
 }
 
-func RegisterUserGroup(rg *gin.Engine) {
+func RegisterUserGroup(rg *gin.Engine, h *controllers.UserController) {
 	user := rg.Group("/users")
 	{
-		user.POST("/", controllers.CreateUser)
+		user.POST("/", h.CreateUser)
 	}
 }
 
-func RegisterBookingGroup(rg *gin.Engine) {
+func RegisterBookingGroup(rg *gin.Engine, h *controllers.BookingController) {
 	booking := rg.Group("/booking")
 	{
-		booking.POST("/", controllers.CreateBooking)
+		booking.POST("/", h.CreateBooking)
 	}
 }

@@ -10,26 +10,39 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/controllers"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
+	"github.com/victorhslito/ticketsystem/internal/repository"
 	"github.com/victorhslito/ticketsystem/internal/routes"
+	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
 func main() {
 	ctx := context.Background()
 
-	database.CreateDatabaseConnection()
+	db := database.CreateDatabaseConnection()
+	db.AutoMigrate(&domain.Event{})
+	db.AutoMigrate(&domain.Seat{})
+	db.AutoMigrate(&domain.User{})
+	db.AutoMigrate(&domain.Booking{})
+	db.AutoMigrate(&domain.Ticket{})
+
+	userRepository := repository.NewUserRepository(db)
+	eventRepository := repository.NewEventRepository(db)
+	bookingRepository := repository.NewBookingRepository(db)
+
+	userService := service.NewUserService(userRepository)
+	eventService := service.NewEventService(eventRepository)
+	bookingService := service.NewBookingService(bookingRepository, userRepository, eventRepository)
+
+	userHandler := controllers.NewUserController(userService)
+	eventHandler := controllers.NewEventController(eventService)
+	bookingHandler := controllers.NewBookingController(bookingService)
 
 	router := gin.Default()
 	router.Use(controllers.ErrorHandler())
 
-	database.DBConnection.AutoMigrate(&domain.Event{})
-	database.DBConnection.AutoMigrate(&domain.Seat{})
-	database.DBConnection.AutoMigrate(&domain.User{})
-	database.DBConnection.AutoMigrate(&domain.Booking{})
-	database.DBConnection.AutoMigrate(&domain.Ticket{})
-
-	routes.RegisterBookingGroup(router)
-	routes.RegisterEventsGroup(router)
-	routes.RegisterUserGroup(router)
+	routes.RegisterBookingGroup(router, bookingHandler)
+	routes.RegisterEventsGroup(router, eventHandler)
+	routes.RegisterUserGroup(router, userHandler)
 
 	cfg := aws.LoadFromEnv()
 

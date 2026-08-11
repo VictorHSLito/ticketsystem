@@ -12,9 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var DBConnection *gorm.DB
-
-func CreateDatabaseConnection() {
+func CreateDatabaseConnection() *gorm.DB {
 	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Fatal("Could not be able to read credential")
@@ -30,7 +28,7 @@ func CreateDatabaseConnection() {
 		panic("Error trying to connect to database...")
 	}
 
-	DBConnection = db
+	return db
 }
 
 func Paginate(c *gin.Context) func(db *gorm.DB) *gorm.DB {
