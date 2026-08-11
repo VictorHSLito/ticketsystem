@@ -1,14 +1,14 @@
 package controllers
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
-	"gorm.io/gorm"
+	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
 type CreateEventDTO struct {
@@ -38,70 +38,29 @@ type Pagination struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func CreateEvent(c *gin.Context) {
+func CreateEvent(c *gin.Context, s *service.EventService) {
 	var eventDTO CreateEventDTO
 
 	if !BindAndValidate(c, &eventDTO) {
 		return
 	}
 
-	event := createEvent(eventDTO)
+	eventID := s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
 
-	if event == nil {
-		c.Error(ErrInternalServer)
-		return
-	}
-
-	c.Header("Location", "/events/"+strconv.FormatUint(uint64(event.ID), 10))
+	c.Header("Location", "/events/"+strconv.FormatUint(uint64(eventID), 10))
 
 	c.JSON(http.StatusCreated, gin.H{"message": "event created!"})
 }
 
-func createEvent(eventDTO CreateEventDTO) *domain.Event {
-	var event domain.Event
-
-	event.Name = eventDTO.Name
-	event.Description = eventDTO.Description
-
-	if err := database.DBConnection.Create(&event).Error; err != nil {
-		log.Println("[ERROR] - Error trying to create event!")
-		return nil
-	}
-
-	seats := createSeats(event, eventDTO.EventSettings.NumberOfSeats)
-	event.Seats = seats
-
-	return &event
-}
-
-func createSeats(event domain.Event, numberOfSeats int) []domain.Seat {
-	seats := make([]domain.Seat, numberOfSeats)
-	for i := range numberOfSeats {
-		seats[i] = domain.Seat{
-			EventID:    event.ID,
-			SeatCode:   "SA" + strconv.Itoa(i),
-			SeatStatus: domain.StatusAvailable,
-		}
-	}
-
-	if err := database.DBConnection.Create(&seats).Error; err != nil {
-		log.Println("[ERROR] - Error trying to create seats!")
-		return nil
-	}
-
-	return seats
-}
-
-func ListEvents(c *gin.Context) {
-	eventDTO := make([]EventsDTO, 0)
-	var events []domain.Event
-
-	database.DBConnection.Scopes(database.Paginate(c)).Find(&events)
+func ListEvents(c *gin.Context, s *service.EventService) {
+	var eventDTO []EventsDTO
+	events := s.ListEvents()
 
 	for _, event := range events {
 		eventDTO = append(eventDTO, EventsDTO{event.Name, event.Description})
 	}
 
+	database.Paginate(c)
 	c.JSON(http.StatusOK, gin.H{
 		"data": eventDTO, "pagination": Pagination{
 			c.GetInt("page"),
@@ -112,11 +71,17 @@ func ListEvents(c *gin.Context) {
 	})
 }
 
-func ListEventByID(c *gin.Context) {
+func ListEventByID(c *gin.Context, s *service.EventService) {
 	id := c.Param("id")
-
-	event, err := gorm.G[domain.Event](database.DBConnection).Where("id = ?", id).First(c.Request.Context())
+	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
+		fmt.Printf("could not parse id: %v\n", err)
+		return
+	}
+
+	event := s.ListByID(uint(eventID))
+
+	if event == nil {
 		c.Error(ErrEventNotFound)
 		return
 	}
@@ -124,13 +89,12 @@ func ListEventByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": EventsDTO{event.Name, event.Description}})
 }
 
-func ListAllSeatsAvailables(c *gin.Context) {
-	eventID := c.Param("id")
-	var seats []domain.Seat
+func ListAllSeatsAvailables(c *gin.Context, s *service.EventService) {
+	id := c.Param("id")
+	eventID, err := strconv.ParseUint(id, 10, 64)
+	seats := s.ListSeatsAvailables(uint(eventID))
 
-	query := database.DBConnection.Where("event_id = ? and seat_status = ?", eventID, domain.StatusAvailable)
-
-	err := query.Scopes(database.Paginate(c)).Find(&seats).Error
+	database.Paginate(c)
 	if err != nil {
 		c.Error(ErrEventNotFound)
 		return
