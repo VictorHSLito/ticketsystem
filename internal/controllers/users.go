@@ -1,52 +1,37 @@
 package controllers
 
 import (
-	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/victorhslito/ticketsystem/internal/database"
-	"github.com/victorhslito/ticketsystem/internal/domain"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
-type createUserDTO struct {
+type UserController struct {
+	s *service.UserService
+}
+
+type CreateUserDTO struct {
 	Username string `json:"username" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-func CreateUser(c *gin.Context) {
-	var createUserDTO createUserDTO
+func NewUserController(s *service.UserService) *UserController {
+	return &UserController{s: s}
+}
+
+func (h *UserController) CreateUser(c *gin.Context) {
+	var createUserDTO CreateUserDTO
 
 	if !BindAndValidate(c, &createUserDTO) {
 		return
 	}
 
-	var user domain.User
-	err := database.DBConnection.Where("email = ?", createUserDTO.Email).First(&user).Error
+	userID := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
 
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.Error(ErrDuplicatedResource)
-		return
-	}
-
-	user.Username = createUserDTO.Username
-	user.Email = createUserDTO.Email
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(createUserDTO.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Println("error trying to encrypt password, err: ", err.Error())
-	}
-
-	user.Password = string(hashedPassword)
-
-	database.DBConnection.Create(&user)
-
-	c.Header("Location", "/users/"+strconv.FormatUint(uint64(user.ID), 10))
+	c.Header("Location", "/users/"+strconv.FormatUint(uint64(userID), 10))
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User created!"})
 }

@@ -1,4 +1,17 @@
 services:
+  localstack:
+    container_name: localstack-aws-simulator
+    image: localstack/localstack
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - DEBUG=${DEBUG:-0}
+    ports:
+      - "127.0.0.1:4566:4566" # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559" # External services port range
+    volumes:
+      - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
   ticketsystem-db:
     image: postgres:18.3
     container_name: ticketsystem-database
