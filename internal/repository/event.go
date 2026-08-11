@@ -25,7 +25,7 @@ func NewEventRepository(db *gorm.DB) EventRepository {
 func (r *eventRepositoryImpl) ListEventByID(eventID uint) (*domain.Event, error) {
 	var event domain.Event
 
-	err := r.db.Where("id = ?", eventID).First(&event).Error
+	err := r.db.Preload("Seats").Where("id = ?", eventID).First(&event).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}

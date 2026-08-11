@@ -26,11 +26,7 @@ func (r *userRepositoryImpl) ListByID(userID uint) (*domain.User, error) {
 	var user domain.User
 
 	err := r.db.Where("id = ?", userID).First(&user).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
-		}
-
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
@@ -41,11 +37,7 @@ func (r *userRepositoryImpl) ListByEmail(email string) (*domain.User, error) {
 	var user domain.User
 
 	err := r.db.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
-		}
-
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
