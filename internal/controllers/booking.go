@@ -11,6 +11,7 @@ import (
 
 type BookingController struct {
 	bookingService *service.BookingService
+	queueService   *service.QueueService
 }
 
 type CreateBookingDTO struct {
@@ -19,8 +20,8 @@ type CreateBookingDTO struct {
 	Seats   []string `json:"seats" binding:"required"`
 }
 
-func NewBookingController(bookingService *service.BookingService) *BookingController {
-	return &BookingController{bookingService: bookingService}
+func NewBookingController(bookingService *service.BookingService, queueService *service.QueueService) *BookingController {
+	return &BookingController{bookingService: bookingService, queueService: queueService}
 }
 
 func (h *BookingController) CreateBooking(c *gin.Context) {
@@ -35,6 +36,13 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 		log.Println("[ERROR] - Failed to process booking:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	_, err = h.queueService.SendMessage(c.Request.Context(), &service.Message{Payload: map[string]any{
+		"bookingId": booking.ID,
+	}, Type: "booking"}, 10)
+	if err != nil {
+		log.Println("[ERROR] - Failed to send message:", err)
 	}
 
 	c.Header("Location", "/booking/"+strconv.FormatUint(uint64(booking.ID), 10))
