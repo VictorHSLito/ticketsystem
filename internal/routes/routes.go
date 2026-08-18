@@ -26,6 +26,6 @@ func RegisterUserGroup(rg *gin.Engine, h *controllers.UserController) {
 func RegisterBookingGroup(rg *gin.Engine, h *controllers.BookingController) {
 	booking := rg.Group("/booking")
 	{
-		booking.POST("/", h.CreateBooking)
+		booking.POST("/reserve", h.CreateBooking)
 	}
 }
