@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -63,6 +64,39 @@ func main() {
 	routes.RegisterBookingGroup(router, bookingHandler)
 	routes.RegisterEventsGroup(router, eventHandler)
 	routes.RegisterUserGroup(router, userHandler)
+
+	bookingConsumer := service.NewConsumer(sqsClient,
+		service.ConsumerConfig{
+			QueueURL:          queueURL,
+			VisibilityTimeout: 30,
+			WaitTimeSeconds:   20,
+			MaxMessages:       10,
+			WorkerCount:       2,
+		},
+		func(ctx context.Context, msg *service.Message) error {
+			if msg.Type != "booking" {
+				return fmt.Errorf("unsupported message type: %s", msg.Type)
+			}
+
+			bookingID, ok := msg.Payload["bookingId"].(float64)
+			if !ok {
+				return fmt.Errorf("invalid bookingId")
+			}
+
+			log.Printf("Processing booking %.0f", bookingID)
+
+			// Perform the asynchronous booking work here.
+			// Example:
+			// return bookingService.ProcessBooking(uint(bookingID))
+
+			return nil
+		})
+
+	go func() {
+		if err := bookingConsumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			log.Printf("SQS consumer stopped: %w", err)
+		}
+	}()
 
 	err = router.Run(":8080")
 	if err != nil {

@@ -13,10 +13,12 @@ import (
 )
 
 type Message struct {
-	ID        string         `json:"id"`
-	Type      string         `json:"type"`
-	Payload   map[string]any `json:"payload"`
-	Timestamp time.Time      `json:"timestamp"`
+	ID             string            `json:"id"`
+	Type           string            `json:"type"`
+	Payload        map[string]any    `json:"payload"`
+	Timestamp      time.Time         `json:"timestamp"`
+	ReceiptHandler string            `json:"-"`
+	Attributes     map[string]string `json:"-"`
 }
 
 type QueueService struct {
