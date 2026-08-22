@@ -11,8 +11,8 @@ func RegisterEventsGroup(rg *gin.Engine, h *controllers.EventController) {
 		events.GET("/", h.ListEvents)
 		events.GET("/:id", h.ListEventByID)
 		events.POST("/", h.CreateEvent)
-		events.GET("/:id/seats", h.ListAllSeatsAvailables)
-
+		events.GET("/:id/seats", h.ListAllSeats)
+		events.GET("/:id/seatStatus", h.ListSeatsByStatus)
 	}
 }
 

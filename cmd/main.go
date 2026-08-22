@@ -94,7 +94,7 @@ func main() {
 
 	go func() {
 		if err := bookingConsumer.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
-			log.Printf("SQS consumer stopped: %w", err)
+			log.Printf("SQS consumer stopped: %v", err)
 		}
 	}()
 

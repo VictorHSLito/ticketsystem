@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -83,10 +83,10 @@ func (h *EventController) ListEventByID(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		fmt.Printf("could not parse id: %v\n", err)
+		log.Println("[ERROR] - Could not parse eventID to uint")
+		c.Error(ErrInternalServer)
 		return
 	}
-
 	event := h.s.ListByID(uint(eventID))
 
 	if event == nil {
@@ -97,16 +97,17 @@ func (h *EventController) ListEventByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": EventsDTO{event.Name, event.Description}})
 }
 
-func (h *EventController) ListAllSeatsAvailables(c *gin.Context) {
+func (h *EventController) ListAllSeats(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
-	seats := h.s.ListSeatsAvailables(uint(eventID))
-
-	database.Paginate(c)
 	if err != nil {
-		c.Error(ErrEventNotFound)
+		log.Println("[ERROR] - Could not parse eventID to uint")
+		c.Error(ErrInternalServer)
 		return
 	}
+	seats := h.s.ListAllSeats(uint(eventID))
+
+	database.Paginate(c)
 
 	c.JSON(http.StatusOK, gin.H{"data": seats, "pagination": Pagination{
 		PageNumber: c.GetInt("page"),
@@ -114,4 +115,22 @@ func (h *EventController) ListAllSeatsAvailables(c *gin.Context) {
 		TotalItems: len(seats),
 		TotalPages: c.GetInt("totalPages"),
 	}})
+}
+
+func (h *EventController) ListSeatsByStatus(c *gin.Context) {
+	id := c.Param("id")
+	eventID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		log.Println("[ERROR] - Could not parse eventID to uint")
+		c.Error(ErrInternalServer)
+		return
+	}
+
+	status := c.DefaultQuery("seatStatus", string(domain.StatusAvailable))
+
+	seats := h.s.ListSeatsByStatus(uint(eventID), status)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": seats,
+	})
 }

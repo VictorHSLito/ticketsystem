@@ -2,6 +2,7 @@ package service
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
@@ -57,6 +58,16 @@ func (s *EventService) ListByID(eventID uint) *domain.Event {
 	return event
 }
 
-func (s *EventService) ListSeatsAvailables(eventID uint) []*domain.Seat {
-	return s.r.ListSeatsAvailables(eventID)
+func (s *EventService) ListAllSeats(eventID uint) []*domain.Seat {
+	return s.r.ListAllSeats(eventID)
+}
+
+func (s *EventService) ListSeatsByStatus(eventID uint, seatStatus string) []*domain.Seat {
+	seatStatus = strings.ToUpper(seatStatus)
+
+	if seatStatus == string(domain.StatusBooked) {
+		return s.r.ListSeatsByStatus(eventID, domain.StatusBooked)
+	} else {
+		return s.r.ListSeatsByStatus(eventID, domain.StatusAvailable)
+	}
 }
