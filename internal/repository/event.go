@@ -11,7 +11,8 @@ type EventRepository interface {
 	ListEventByID(eventID uint) (*domain.Event, error)
 	ListAll() []*domain.Event
 	Create(event *domain.Event) (*domain.Event, error)
-	ListSeatsAvailables(eventID uint) []*domain.Seat
+	ListSeatsByStatus(eventID uint, seatStatus domain.SeatStatus) []*domain.Seat
+	ListAllSeats(eventID uint) []*domain.Seat
 }
 
 type eventRepositoryImpl struct {
@@ -50,9 +51,17 @@ func (r *eventRepositoryImpl) Create(event *domain.Event) (*domain.Event, error)
 	return event, nil
 }
 
-func (r *eventRepositoryImpl) ListSeatsAvailables(eventID uint) []*domain.Seat {
+func (r *eventRepositoryImpl) ListSeatsByStatus(eventID uint, seatStatus domain.SeatStatus) []*domain.Seat {
 	var seats []*domain.Seat
-	r.db.Where("event_id = ? and seat_status = ?", eventID, domain.StatusAvailable).Find(&seats)
+	r.db.Where("event_id = ? and seat_status = ?", eventID, seatStatus).Find(&seats)
+
+	return seats
+}
+
+func (r *eventRepositoryImpl) ListAllSeats(eventID uint) []*domain.Seat {
+	var seats []*domain.Seat
+
+	r.db.Where("event_id = ?", eventID).Preload("Seats").Find(&seats)
 
 	return seats
 }

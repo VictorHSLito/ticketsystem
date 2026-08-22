@@ -11,8 +11,8 @@ func RegisterEventsGroup(rg *gin.Engine, h *controllers.EventController) {
 		events.GET("/", h.ListEvents)
 		events.GET("/:id", h.ListEventByID)
 		events.POST("/", h.CreateEvent)
-		events.GET("/:id/seats", h.ListAllSeatsAvailables)
-
+		events.GET("/:id/seats", h.ListAllSeats)
+		events.GET("/:id/seatStatus", h.ListSeatsByStatus)
 	}
 }
 
@@ -26,6 +26,6 @@ func RegisterUserGroup(rg *gin.Engine, h *controllers.UserController) {
 func RegisterBookingGroup(rg *gin.Engine, h *controllers.BookingController) {
 	booking := rg.Group("/booking")
 	{
-		booking.POST("/", h.CreateBooking)
+		booking.POST("/reserve", h.CreateBooking)
 	}
 }
