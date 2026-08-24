@@ -57,7 +57,7 @@ func (h *EventController) CreateEvent(c *gin.Context) {
 
 	c.Header("Location", "/events/"+strconv.FormatUint(uint64(eventID), 10))
 
-	c.JSON(http.StatusCreated, gin.H{"message": "event created!"})
+	c.JSON(http.StatusCreated, gin.H{"message": "Event created!"})
 }
 
 func (h *EventController) ListEvents(c *gin.Context) {

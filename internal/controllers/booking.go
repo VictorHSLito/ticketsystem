@@ -34,7 +34,7 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 	booking, err := h.bookingService.CreateBooking(bookingDTO.UserID, bookingDTO.EventID, bookingDTO.Seats)
 	if err != nil {
 		log.Println("[ERROR] - Failed to process booking:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -56,13 +56,14 @@ func (h *BookingController) ListBookingByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking ID"})
+		log.Println("[ERROR] - Failed to convert id")
+		c.Error(ErrInternalServer)
 		return
 	}
 
 	booking, err := h.bookingService.FindByID(uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		c.Error(ErrBookingNotFound)
 		return
 	}
 
