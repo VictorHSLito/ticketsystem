@@ -44,7 +44,11 @@ func (s *BookingService) CreateBooking(userID uint, eventID uint, seatCodes []st
 	}
 
 	// Valida e mapeia os assentos
-	bookedSeats := verifySeats(event.Seats, seatCodes)
+	bookedSeats, err := verifySeats(event.Seats, seatCodes)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(bookedSeats) == 0 {
 		return nil, errors.New("no valid or available seats")
 	}
@@ -71,14 +75,25 @@ func (s *BookingService) CreateBooking(userID uint, eventID uint, seatCodes []st
 	return booking, nil
 }
 
-func verifySeats(seats []domain.Seat, seatCodes []string) map[uint]string {
-	bookingSeats := make(map[uint]string)
+func verifySeats(seats []domain.Seat, seatCodes []string) (map[uint]string, error) {
+	seatMap := make(map[string]domain.Seat)
+
 	for _, seat := range seats {
-		for _, seatCode := range seatCodes {
-			if seat.SeatCode == seatCode {
-				bookingSeats[seat.ID] = seatCode
-			}
-		}
+		seatMap[seat.SeatCode] = seat
 	}
-	return bookingSeats
+
+	bookingSeats := make(map[uint]string)
+	for _, code := range seatCodes {
+		seat, exists := seatMap[code]
+		if !exists {
+			return nil, errors.New("seat" + code + "does not exists for this event")
+		}
+
+		if seat.SeatStatus != domain.StatusAvailable {
+			return nil, errors.New("seat" + code + "is already booked")
+		}
+
+		bookingSeats[seat.ID] = code
+	}
+	return bookingSeats, nil
 }

@@ -29,6 +29,8 @@ func (e *ApiError) Error() string {
 var (
 	ErrUserNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "User not found!"}
 	ErrEventNotFound      = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Event not found!"}
+	ErrBookingNotFound    = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Booking not found"}
+	ErrUserAlreadyExists  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "User Duplicated", Detail: "User with this data already exists"}
 	ErrInternalServer     = &ApiError{Status: http.StatusInternalServerError, Type: "about:blank", Title: "Internal Server Error", Detail: "An unexpected error occurred"}
 	ErrDuplicatedResource = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Duplicated resource!"}
 )
