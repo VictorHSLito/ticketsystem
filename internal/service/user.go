@@ -18,9 +18,9 @@ func NewUserService(r repository.UserRepository) *UserService {
 	return &UserService{r: r}
 }
 
-func (s *UserService) CreateUser(username, email, password string) uint {
+func (s *UserService) CreateUser(username, email, password string) (uint, error) {
 	if s.isUserAlreadyExists(email) {
-		return 0
+		return 0, errors.New("user already exists")
 	}
 	user := &domain.User{
 		Username: username,
@@ -35,7 +35,7 @@ func (s *UserService) CreateUser(username, email, password string) uint {
 
 	s.r.Create(user)
 
-	return user.ID
+	return user.ID, nil
 }
 
 func (s *UserService) FindByID(userID uint) *domain.User {

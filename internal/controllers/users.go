@@ -29,7 +29,11 @@ func (h *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	userID := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
+	userID, err := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
+	if err != nil {
+		c.Error(ErrUserAlreadyExists)
+		return
+	}
 
 	c.Header("Location", "/users/"+strconv.FormatUint(uint64(userID), 10))
 
