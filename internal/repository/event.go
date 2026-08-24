@@ -3,16 +3,17 @@ package repository
 import (
 	"errors"
 
+	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"gorm.io/gorm"
 )
 
 type EventRepository interface {
 	ListEventByID(eventID uint) (*domain.Event, error)
-	ListAll() []*domain.Event
+	ListAll(page, pageSize int) ([]*domain.Event, int64)
 	Create(event *domain.Event) (*domain.Event, error)
 	ListSeatsByStatus(eventID uint, seatStatus domain.SeatStatus) []*domain.Seat
-	ListAllSeats(eventID uint) []*domain.Seat
+	ListAllSeats(eventID uint, page, pageSize int) ([]*domain.Seat, int64)
 }
 
 type eventRepositoryImpl struct {
@@ -34,11 +35,14 @@ func (r *eventRepositoryImpl) ListEventByID(eventID uint) (*domain.Event, error)
 	return &event, nil
 }
 
-func (r *eventRepositoryImpl) ListAll() []*domain.Event {
+func (r *eventRepositoryImpl) ListAll(page, pageSize int) ([]*domain.Event, int64) {
 	var events []*domain.Event
+	var totalElements int64
 
-	r.db.Find(&events)
-	return events
+	r.db.Model(&domain.Event{}).Count(&totalElements)
+	r.db.Scopes(database.Paginate(page, pageSize)).Find(&events)
+
+	return events, totalElements
 }
 
 func (r *eventRepositoryImpl) Create(event *domain.Event) (*domain.Event, error) {
@@ -58,10 +62,12 @@ func (r *eventRepositoryImpl) ListSeatsByStatus(eventID uint, seatStatus domain.
 	return seats
 }
 
-func (r *eventRepositoryImpl) ListAllSeats(eventID uint) []*domain.Seat {
+func (r *eventRepositoryImpl) ListAllSeats(eventID uint, page, pageSize int) ([]*domain.Seat, int64) {
 	var seats []*domain.Seat
+	var totalElements int64
 
-	r.db.Where("event_id = ?", eventID).Preload("Seats").Find(&seats)
+	r.db.Model(&domain.Seat{}).Count(&totalElements)
+	r.db.Where("event_id = ?", eventID).Preload("Seats").Scopes(database.Paginate(page, pageSize)).Find(&seats)
 
-	return seats
+	return seats, totalElements
 }

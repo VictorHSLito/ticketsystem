@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
@@ -61,20 +61,25 @@ func (h *EventController) CreateEvent(c *gin.Context) {
 }
 
 func (h *EventController) ListEvents(c *gin.Context) {
-	var eventDTO []EventsDTO
-	events := h.s.ListEvents()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
+	events, totalElements := h.s.ListEvents(page, pageSize)
+
+	totalPages := int(math.Ceil(float64(totalElements) / float64(pageSize)))
+
+	var eventDTO []EventsDTO
 	for _, event := range events {
 		eventDTO = append(eventDTO, EventsDTO{event.Name, event.Description})
 	}
 
-	database.Paginate(c)
 	c.JSON(http.StatusOK, gin.H{
-		"data": eventDTO, "pagination": Pagination{
-			c.GetInt("page"),
-			c.GetInt("pageSize"),
-			len(eventDTO),
-			c.GetInt("totalPages"),
+		"data": eventDTO,
+		"pagination": Pagination{
+			PageNumber: page,
+			PageSize:   pageSize,
+			TotalItems: len(eventDTO),
+			TotalPages: totalPages,
 		},
 	})
 }
@@ -105,15 +110,18 @@ func (h *EventController) ListAllSeats(c *gin.Context) {
 		c.Error(ErrInternalServer)
 		return
 	}
-	seats := h.s.ListAllSeats(uint(eventID))
 
-	database.Paginate(c)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
+	seats, totalElements := h.s.ListAllSeats(uint(eventID), page, pageSize)
+
+	totalPages := int(math.Ceil(float64(totalElements) / float64(pageSize)))
 	c.JSON(http.StatusOK, gin.H{"data": seats, "pagination": Pagination{
-		PageNumber: c.GetInt("page"),
-		PageSize:   c.GetInt("pageSize"),
+		PageNumber: page,
+		PageSize:   pageSize,
 		TotalItems: len(seats),
-		TotalPages: c.GetInt("totalPages"),
+		TotalPages: totalPages,
 	}})
 }
 

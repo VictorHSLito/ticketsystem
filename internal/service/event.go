@@ -45,8 +45,8 @@ func (s *EventService) createSeats(quantity int) []domain.Seat {
 	return seats
 }
 
-func (s *EventService) ListEvents() []*domain.Event {
-	return s.r.ListAll()
+func (s *EventService) ListEvents(page, pageSize int) ([]*domain.Event, int64) {
+	return s.r.ListAll(page, pageSize)
 }
 
 func (s *EventService) ListByID(eventID uint) *domain.Event {
@@ -58,8 +58,8 @@ func (s *EventService) ListByID(eventID uint) *domain.Event {
 	return event
 }
 
-func (s *EventService) ListAllSeats(eventID uint) []*domain.Seat {
-	return s.r.ListAllSeats(eventID)
+func (s *EventService) ListAllSeats(eventID uint, page, pageSize int) ([]*domain.Seat, int64) {
+	return s.r.ListAllSeats(eventID, page, pageSize)
 }
 
 func (s *EventService) ListSeatsByStatus(eventID uint, seatStatus string) []*domain.Seat {
