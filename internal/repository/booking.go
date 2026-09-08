@@ -8,6 +8,7 @@ import (
 type BookingRepository interface {
 	FindByID(bookingID uint) (*domain.Booking, error)
 	CreateBookingTx(booking *domain.Booking, tickets []domain.Ticket, seatIDs []uint) error
+	Update(booking *domain.Booking)
 }
 
 type bookingRepositoryImpl struct {
@@ -47,4 +48,8 @@ func (r *bookingRepositoryImpl) CreateBookingTx(booking *domain.Booking, tickets
 
 		return nil
 	})
+}
+
+func (r *bookingRepositoryImpl) Update(booking *domain.Booking) {
+	r.db.Save(booking)
 }
