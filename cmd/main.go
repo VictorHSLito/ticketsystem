@@ -48,11 +48,14 @@ func main() {
 	userRepository := repository.NewUserRepository(db)
 	eventRepository := repository.NewEventRepository(db)
 	bookingRepository := repository.NewBookingRepository(db)
+	seatRepository := repository.NewSeatsRepository(db)
+	ticketRepository := repository.NewTicketRepository(db)
 
 	userService := service.NewUserService(userRepository)
 	eventService := service.NewEventService(eventRepository)
 	bookingService := service.NewBookingService(bookingRepository, userRepository, eventRepository)
 	queueService := service.NewQueueService(sqsClient, queueURL)
+	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository)
 
 	userHandler := controllers.NewUserController(userService)
 	eventHandler := controllers.NewEventController(eventService)
@@ -83,11 +86,11 @@ func main() {
 				return fmt.Errorf("invalid bookingId")
 			}
 
-			log.Printf("Processing booking %.0f", bookingID)
+			log.Printf("Processing booking %.0f\n", bookingID)
 
-			// Perform the asynchronous booking work here.
-			// Example:
-			// return bookingService.ProcessBooking(uint(bookingID))
+			expireBookingService.ExpireBookings(int(bookingID))
+
+			log.Printf("Booked %.0f proccessed...\n", bookingID)
 
 			return nil
 		})
