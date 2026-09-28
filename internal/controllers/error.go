@@ -67,7 +67,7 @@ func ErrorHandler() gin.HandlerFunc {
 	}
 }
 
-func BindAndValidate(c *gin.Context, obj interface{}) bool {
+func BindAndValidate(c *gin.Context, obj any) bool {
 	if err := c.ShouldBindJSON(obj); err != nil {
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {

@@ -31,3 +31,10 @@ func RegisterBookingGroup(rg *gin.Engine, h *controllers.BookingController) {
 		booking.GET("/:id", h.ListBookingByID)
 	}
 }
+
+func RegisterAuthGroup(rg *gin.Engine, h *controllers.AuthController) {
+	auth := rg.Group("/auth")
+	{
+		auth.POST("/token", h.GenerateToken)
+	}
+}

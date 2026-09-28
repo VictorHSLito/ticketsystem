@@ -12,6 +12,7 @@ type UserRepository interface {
 	ListByEmail(email string) (*domain.User, error)
 	Create(user *domain.User) (*domain.User, error)
 	Update(user *domain.User) (*domain.User, error)
+	FindByUsername(username string) (*domain.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -60,4 +61,15 @@ func (r *userRepositoryImpl) Update(user *domain.User) (*domain.User, error) {
 	}
 
 	return user, nil
+}
+
+func (r *userRepositoryImpl) FindByUsername(username string) (*domain.User, error) {
+	var user domain.User
+
+	err := r.db.Where("username = ?", username).Find(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
