@@ -29,8 +29,9 @@ type AuthService struct {
 }
 
 type CustomClaims struct {
-	Roles []string `json:"roles"`
-	Email string   `json:"email"`
+	Roles  []string `json:"roles"`
+	Email  string   `json:"email"`
+	UserId uint     `json:"userId"`
 	jwt.RegisteredClaims
 }
 
@@ -84,8 +85,9 @@ func (s *AuthService) GenerateToken(username string, password string) (*AccessTo
 	t := jwt.New(jwt.GetSigningMethod(jwt.SigningMethodRS256.Name))
 
 	t.Claims = &CustomClaims{
-		[]string{"User", "Admin"},
+		[]string{"User"},
 		user.Email,
+		user.ID,
 		jwt.RegisteredClaims{
 			Issuer:    "ticketsystem",
 			Subject:   username,
