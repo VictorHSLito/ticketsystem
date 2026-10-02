@@ -10,8 +10,9 @@ import (
 )
 
 type BookingController struct {
-	bookingService *service.BookingService
-	queueService   *service.QueueService
+	bookingService        *service.BookingService
+	queueService          *service.QueueService
+	confirmBookingService *service.ConfirmBookingService
 }
 
 type CreateBookingDTO struct {
@@ -20,8 +21,16 @@ type CreateBookingDTO struct {
 	Seats   []string `json:"seats" binding:"required"`
 }
 
-func NewBookingController(bookingService *service.BookingService, queueService *service.QueueService) *BookingController {
-	return &BookingController{bookingService: bookingService, queueService: queueService}
+type ConfirmBookingDTO struct {
+	BookingID uint `json:"bookingId" binding:"required"`
+}
+
+func NewBookingController(
+	bookingService *service.BookingService,
+	queueService *service.QueueService,
+	confirmBookingService *service.ConfirmBookingService,
+) *BookingController {
+	return &BookingController{bookingService: bookingService, queueService: queueService, confirmBookingService: confirmBookingService}
 }
 
 func (h *BookingController) CreateBooking(c *gin.Context) {
@@ -68,4 +77,17 @@ func (h *BookingController) ListBookingByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, booking)
+}
+
+func (h *BookingController) ConfirmBooking(c *gin.Context) {
+	var confirmDTO ConfirmBookingDTO
+
+	if !BindAndValidate(c, &confirmDTO) {
+		c.Error(ErrInternalServer)
+		return
+	}
+
+	h.confirmBookingService.ConfirmBooking(confirmDTO.BookingID)
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

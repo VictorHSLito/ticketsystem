@@ -55,11 +55,14 @@ func main() {
 	eventService := service.NewEventService(eventRepository)
 	bookingService := service.NewBookingService(bookingRepository, userRepository, eventRepository)
 	queueService := service.NewQueueService(sqsClient, queueURL)
+	confirmBookingService := service.NewConfirmBookingService(bookingRepository)
 	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository)
+	authService := service.NewAuthService(userRepository)
 
 	userHandler := controllers.NewUserController(userService)
 	eventHandler := controllers.NewEventController(eventService)
-	bookingHandler := controllers.NewBookingController(bookingService, queueService)
+	bookingHandler := controllers.NewBookingController(bookingService, queueService, confirmBookingService)
+	authHandler := controllers.NewAuthController(authService)
 
 	router := gin.Default()
 	router.Use(controllers.ErrorHandler())
@@ -67,6 +70,7 @@ func main() {
 	routes.RegisterBookingGroup(router, bookingHandler)
 	routes.RegisterEventsGroup(router, eventHandler)
 	routes.RegisterUserGroup(router, userHandler)
+	routes.RegisterAuthGroup(router, authHandler)
 
 	bookingConsumer := service.NewConsumer(sqsClient,
 		service.ConsumerConfig{
