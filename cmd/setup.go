@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/victorhslito/ticketsystem/internal/aws"
 	"github.com/victorhslito/ticketsystem/internal/controllers"
@@ -37,6 +40,36 @@ func NewApp() (*App, error) {
 		fmt.Println("[ERROR] - Failed trying to read \".env\" file")
 		log.Printf("error: %v\n", err)
 		return nil, errors.New("verify if \".env\" file exists or the path is correct")
+	}
+
+	privateKeyPath := os.Getenv("JWT_PRIVATE_KEY_PATH")
+	publicKeyPath := os.Getenv("JWT_PUBLIC_KEY_PATH")
+	expiresInStr := os.Getenv("JWT_EXPIRES_IN")
+
+	expiresInSec, err := strconv.Atoi(expiresInStr)
+	if err != nil {
+		expiresInSec = 3600
+	}
+	expiresIn := time.Duration(expiresInSec) * time.Second
+
+	signBytes, err := os.ReadFile(privateKeyPath)
+	if err != nil {
+		return nil, errors.New("error trying to read private key")
+	}
+
+	signKey, err := jwt.ParseRSAPrivateKeyFromPEM(signBytes)
+	if err != nil {
+		return nil, errors.New("error trying to convert private key")
+	}
+
+	verifyBytes, err := os.ReadFile(publicKeyPath)
+	if err != nil {
+		return nil, errors.New("error trying to read public key")
+	}
+
+	verifyKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
+	if err != nil {
+		return nil, errors.New("error trying to convert public key")
 	}
 
 	queueName := os.Getenv("AWS_SQS_NAME")
@@ -81,7 +114,7 @@ func NewApp() (*App, error) {
 	queueService := service.NewQueueService(sqsClient, queueURL)
 	confirmBookingService := service.NewConfirmBookingService(bookingRepository)
 	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository)
-	authService := service.NewAuthService(userRepository)
+	authService := service.NewAuthService(userRepository, signKey, verifyKey, expiresIn)
 
 	userHandler := controllers.NewUserController(userService)
 	eventHandler := controllers.NewEventController(eventService)

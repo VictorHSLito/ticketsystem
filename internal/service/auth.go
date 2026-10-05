@@ -4,8 +4,6 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,19 +11,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	expiresIn      = 300
-	privateKeyPath = "../rsaPrivateKey.pem"
-	publicKeyPath  = "../publicKey.pem"
-)
-
-var (
-	verifyKey *rsa.PublicKey
-	signKey   *rsa.PrivateKey
-)
-
 type AuthService struct {
-	ur repository.UserRepository
+	ur        repository.UserRepository
+	signKey   *rsa.PrivateKey
+	verifyKey *rsa.PublicKey
+	expiresIn time.Duration
 }
 
 type CustomClaims struct {
@@ -40,30 +30,17 @@ type AccessTokenResponseDTO struct {
 	ExpiresIn   time.Duration `json:"expiresIn"`
 }
 
-func NewAuthService(userRepository repository.UserRepository) *AuthService {
-	initJwtConfig()
-	return &AuthService{ur: userRepository}
-}
-
-func initJwtConfig() {
-	signBytes, err := os.ReadFile(privateKeyPath)
-	if err != nil {
-		log.Fatal("Erro ao ler chave privada: ", err)
-	}
-
-	signKey, err = jwt.ParseRSAPrivateKeyFromPEM(signBytes)
-	if err != nil {
-		log.Fatal("Erro ao fazer parse da chave privada: ", err)
-	}
-
-	verifyBytes, err := os.ReadFile(publicKeyPath)
-	if err != nil {
-		log.Fatal("Erro ao ler chave pública: ", err)
-	}
-
-	verifyKey, err = jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
-	if err != nil {
-		log.Fatal("Erro ao fazer parse da chave pública: ", err)
+func NewAuthService(
+	userRepository repository.UserRepository,
+	signKey *rsa.PrivateKey,
+	verifyKey *rsa.PublicKey,
+	expiresIn time.Duration,
+) *AuthService {
+	return &AuthService{
+		ur:        userRepository,
+		signKey:   signKey,
+		verifyKey: verifyKey,
+		expiresIn: expiresIn,
 	}
 }
 
@@ -92,15 +69,15 @@ func (s *AuthService) GenerateToken(username string, password string) (*AccessTo
 			Issuer:    "ticketsystem",
 			Subject:   username,
 			IssuedAt:  issuedAt,
-			ExpiresAt: jwt.NewNumericDate(issuedAt.Add(expiresIn * time.Second)),
+			ExpiresAt: jwt.NewNumericDate(issuedAt.Add(s.expiresIn * time.Second)),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, t.Claims)
-	ss, err := token.SignedString(signKey)
+	ss, err := token.SignedString(s.signKey)
 
 	return &AccessTokenResponseDTO{
 		AccessToken: ss,
-		ExpiresIn:   expiresIn,
+		ExpiresIn:   s.expiresIn,
 	}, nil
 }
