@@ -38,6 +38,8 @@ type User struct {
 	Email    string `gorm:"unique"`
 	Password string
 	Bookings []Booking
+	RoleID   uint
+	Role     Role `gorm:foreignKey:RoleID"`
 }
 
 type Booking struct {
@@ -51,4 +53,16 @@ type Ticket struct {
 	ExternalID string
 	BookingID  uint
 	SeatID     uint
+}
+
+type Role struct {
+	ID     uint
+	Name   string  `gorm:"unique"`
+	Scopes []Scope `gorm:"many2many:roles_scopes;"`
+	Users  []User
+}
+
+type Scope struct {
+	ID   uint
+	Name string `gorm:"unique"`
 }

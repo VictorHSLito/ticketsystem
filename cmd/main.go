@@ -41,6 +41,8 @@ func main() {
 	db := database.CreateDatabaseConnection()
 	db.AutoMigrate(&domain.Event{})
 	db.AutoMigrate(&domain.Seat{})
+	db.AutoMigrate(&domain.Role{})
+	db.AutoMigrate(&domain.Scope{})
 	db.AutoMigrate(&domain.User{})
 	db.AutoMigrate(&domain.Booking{})
 	db.AutoMigrate(&domain.Ticket{})
