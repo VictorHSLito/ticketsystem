@@ -1,20 +1,13 @@
 package database
 
 import (
-	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func CreateDatabaseConnection() *gorm.DB {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatal("Could not be able to read credential")
-	}
-
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
