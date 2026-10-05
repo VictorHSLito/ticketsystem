@@ -33,7 +33,7 @@ type App struct {
 func NewApp() (*App, error) {
 	ctx := context.Background()
 
-	if err := godotenv.Load("../env"); err != nil {
+	if err := godotenv.Load("../.env"); err != nil {
 		fmt.Println("[ERROR] - Failed trying to read \".env\" file")
 		log.Printf("error: %v\n", err)
 		return nil, errors.New("verify if \".env\" file exists or the path is correct")
