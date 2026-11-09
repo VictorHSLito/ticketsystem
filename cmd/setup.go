@@ -102,6 +102,11 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("failed to auto-migrate database: %w", err)
 	}
 
+	err = database.SeedDatabase(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate seed: %w", err)
+	}
+
 	userRepository := repository.NewUserRepository(db)
 	eventRepository := repository.NewEventRepository(db)
 	bookingRepository := repository.NewBookingRepository(db)
@@ -115,11 +120,13 @@ func NewApp() (*App, error) {
 	confirmBookingService := service.NewConfirmBookingService(bookingRepository)
 	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository)
 	authService := service.NewAuthService(userRepository, signKey, verifyKey, expiresIn)
+	adminService := service.NewAdminService(userRepository)
 
 	userHandler := controllers.NewUserController(userService)
 	eventHandler := controllers.NewEventController(eventService)
 	bookingHandler := controllers.NewBookingController(bookingService, queueService, confirmBookingService)
 	authHandler := controllers.NewAuthController(authService)
+	adminHandler := controllers.NewAdminController(adminService)
 
 	router := gin.Default()
 	router.Use(controllers.ErrorHandler())
@@ -128,6 +135,7 @@ func NewApp() (*App, error) {
 	routes.RegisterEventsGroup(router, eventHandler)
 	routes.RegisterUserGroup(router, userHandler)
 	routes.RegisterAuthGroup(router, authHandler)
+	routes.RegisterAdminGroup(router, adminHandler)
 
 	return &App{
 		Router:               router,

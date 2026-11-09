@@ -39,7 +39,7 @@ type User struct {
 	Password string
 	Bookings []Booking
 	RoleID   uint
-	Role     Role `gorm:foreignKey:RoleID"`
+	Role     Role `gorm:"foreignKey:RoleID"`
 }
 
 type Booking struct {
