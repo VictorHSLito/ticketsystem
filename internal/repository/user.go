@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	ListByID(userID uint) (*domain.User, error)
 	ListByEmail(email string) (*domain.User, error)
+	CountUsers() int64
 	Create(user *domain.User) (*domain.User, error)
 	Update(user *domain.User) (*domain.User, error)
 	FindByUsername(username string) (*domain.User, error)
@@ -21,6 +22,14 @@ type userRepositoryImpl struct {
 
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepositoryImpl{db: db}
+}
+
+func (r *userRepositoryImpl) CountUsers() int64 {
+	var count int64
+
+	r.db.Model(&domain.User{}).Count(&count)
+
+	return count
 }
 
 func (r *userRepositoryImpl) ListByID(userID uint) (*domain.User, error) {

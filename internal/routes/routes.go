@@ -41,3 +41,10 @@ func RegisterAuthGroup(rg *gin.Engine, h *controllers.AuthController) {
 		auth.POST("/token", h.GenerateToken)
 	}
 }
+
+func RegisterAdminGroup(rg *gin.Engine, h *controllers.AdminController) {
+	admin := rg.Group("/setup-admin")
+	{
+		admin.POST("/", h.CreateAdmin)
+	}
+}
