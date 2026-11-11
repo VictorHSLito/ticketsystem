@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -13,6 +13,7 @@ type BookingController struct {
 	bookingService        *service.BookingService
 	queueService          *service.QueueService
 	confirmBookingService *service.ConfirmBookingService
+	logger                *slog.Logger
 }
 
 type CreateBookingDTO struct {
@@ -29,8 +30,9 @@ func NewBookingController(
 	bookingService *service.BookingService,
 	queueService *service.QueueService,
 	confirmBookingService *service.ConfirmBookingService,
+	logger *slog.Logger,
 ) *BookingController {
-	return &BookingController{bookingService: bookingService, queueService: queueService, confirmBookingService: confirmBookingService}
+	return &BookingController{bookingService: bookingService, queueService: queueService, confirmBookingService: confirmBookingService, logger: logger.With("component", "booking_handler")}
 }
 
 func (h *BookingController) CreateBooking(c *gin.Context) {
@@ -42,7 +44,7 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 
 	booking, err := h.bookingService.CreateBooking(bookingDTO.UserID, bookingDTO.EventID, bookingDTO.Seats)
 	if err != nil {
-		log.Println("[ERROR] - Failed to process booking:", err)
+		h.logger.Error("Failed to process booking", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}
@@ -51,7 +53,9 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 		"bookingId": booking.ID,
 	}, Type: "booking"}, 10)
 	if err != nil {
-		log.Println("[ERROR] - Failed to send message:", err)
+		h.logger.Error("Failed to send message", "error", err)
+		c.Error(ErrInternalServer)
+		return
 	}
 
 	c.Header("Location", "/booking/"+strconv.FormatUint(uint64(booking.ID), 10))
@@ -65,7 +69,7 @@ func (h *BookingController) ListBookingByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Failed to convert id")
+		h.logger.Error("Failed to convert id", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}

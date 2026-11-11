@@ -25,6 +25,7 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 	user := &domain.User{
 		Username: username,
 		Email:    email,
+		RoleID:   1,
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

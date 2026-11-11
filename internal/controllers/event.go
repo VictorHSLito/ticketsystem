@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -12,7 +12,8 @@ import (
 )
 
 type EventController struct {
-	s *service.EventService
+	s      *service.EventService
+	logger *slog.Logger
 }
 
 type CreateEventDTO struct {
@@ -42,8 +43,8 @@ type Pagination struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func NewEventController(s *service.EventService) *EventController {
-	return &EventController{s: s}
+func NewEventController(s *service.EventService, logger *slog.Logger) *EventController {
+	return &EventController{s: s, logger: logger.With("component", "event_handler")}
 }
 
 func (h *EventController) CreateEvent(c *gin.Context) {
@@ -88,7 +89,7 @@ func (h *EventController) ListEventByID(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}
@@ -106,7 +107,7 @@ func (h *EventController) ListAllSeats(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}
@@ -129,7 +130,7 @@ func (h *EventController) ListSeatsByStatus(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}

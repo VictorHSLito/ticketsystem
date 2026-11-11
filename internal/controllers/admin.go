@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,7 @@ import (
 
 type AdminController struct {
 	adminService *service.AdminService
+	logger       *slog.Logger
 }
 
 type CreateAdminRequestDTO struct {
@@ -17,8 +19,8 @@ type CreateAdminRequestDTO struct {
 	Email    string `json:"email" binding:"required"`
 }
 
-func NewAdminController(adminService *service.AdminService) *AdminController {
-	return &AdminController{adminService: adminService}
+func NewAdminController(adminService *service.AdminService, logger *slog.Logger) *AdminController {
+	return &AdminController{adminService: adminService, logger: logger.With("component", "admin_handler")}
 }
 
 func (h *AdminController) CreateAdmin(c *gin.Context) {

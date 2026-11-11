@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -9,7 +10,8 @@ import (
 )
 
 type UserController struct {
-	s *service.UserService
+	s      *service.UserService
+	logger *slog.Logger
 }
 
 type CreateUserDTO struct {
@@ -18,8 +20,8 @@ type CreateUserDTO struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func NewUserController(s *service.UserService) *UserController {
-	return &UserController{s: s}
+func NewUserController(s *service.UserService, logger *slog.Logger) *UserController {
+	return &UserController{s: s, logger: logger.With("component", "user_handler")}
 }
 
 func (h *UserController) CreateUser(c *gin.Context) {

@@ -16,6 +16,7 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/controllers"
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
+	"github.com/victorhslito/ticketsystem/internal/logger"
 	"github.com/victorhslito/ticketsystem/internal/routes"
 
 	"github.com/victorhslito/ticketsystem/internal/repository"
@@ -122,11 +123,13 @@ func NewApp() (*App, error) {
 	authService := service.NewAuthService(userRepository, signKey, verifyKey, expiresIn)
 	adminService := service.NewAdminService(userRepository)
 
-	userHandler := controllers.NewUserController(userService)
-	eventHandler := controllers.NewEventController(eventService)
-	bookingHandler := controllers.NewBookingController(bookingService, queueService, confirmBookingService)
-	authHandler := controllers.NewAuthController(authService)
-	adminHandler := controllers.NewAdminController(adminService)
+	apiLogger := logger.NewLogger()
+
+	userHandler := controllers.NewUserController(userService, apiLogger)
+	eventHandler := controllers.NewEventController(eventService, apiLogger)
+	bookingHandler := controllers.NewBookingController(bookingService, queueService, confirmBookingService, apiLogger)
+	authHandler := controllers.NewAuthController(authService, apiLogger)
+	adminHandler := controllers.NewAdminController(adminService, apiLogger)
 
 	router := gin.Default()
 	router.Use(controllers.ErrorHandler())

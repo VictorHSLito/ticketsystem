@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +15,11 @@ type LoginRequestDTO struct {
 
 type AuthController struct {
 	authService *service.AuthService
+	logger      *slog.Logger
 }
 
-func NewAuthController(authService *service.AuthService) *AuthController {
-	return &AuthController{authService: authService}
+func NewAuthController(authService *service.AuthService, logger *slog.Logger) *AuthController {
+	return &AuthController{authService: authService, logger: logger.With("component", "auth_handler")}
 }
 
 func (h *AuthController) GenerateToken(c *gin.Context) {
