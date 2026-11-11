@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
@@ -11,11 +11,12 @@ import (
 )
 
 type UserService struct {
-	r repository.UserRepository
+	r      repository.UserRepository
+	logger *slog.Logger
 }
 
-func NewUserService(r repository.UserRepository) *UserService {
-	return &UserService{r: r}
+func NewUserService(r repository.UserRepository, logger *slog.Logger) *UserService {
+	return &UserService{r: r, logger: logger.With("component", "user_service")}
 }
 
 func (s *UserService) CreateUser(username, email, password string) (uint, error) {
@@ -29,7 +30,8 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("error trying to encrypt password, err: ", err.Error())
+		s.logger.Error("Error trying to encrypt password", "error", err)
+		return 0, errors.New("")
 	}
 
 	user.Password = string(hashedPassword)

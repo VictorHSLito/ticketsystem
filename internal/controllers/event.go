@@ -44,7 +44,7 @@ type Pagination struct {
 }
 
 func NewEventController(s *service.EventService, logger *slog.Logger) *EventController {
-	return &EventController{s: s, logger: logger.With("component", "event_handler")}
+	return &EventController{s: s, logger: logger.With("component", "event_controller")}
 }
 
 func (h *EventController) CreateEvent(c *gin.Context) {

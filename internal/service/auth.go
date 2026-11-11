@@ -3,7 +3,7 @@ package service
 import (
 	"crypto/rsa"
 	"errors"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +16,7 @@ type AuthService struct {
 	signKey   *rsa.PrivateKey
 	verifyKey *rsa.PublicKey
 	expiresIn time.Duration
+	logger    *slog.Logger
 }
 
 type CustomClaims struct {
@@ -35,25 +36,27 @@ func NewAuthService(
 	signKey *rsa.PrivateKey,
 	verifyKey *rsa.PublicKey,
 	expiresIn time.Duration,
+	logger *slog.Logger,
 ) *AuthService {
 	return &AuthService{
 		ur:        userRepository,
 		signKey:   signKey,
 		verifyKey: verifyKey,
 		expiresIn: expiresIn,
+		logger:    logger.With("component", "auth_service"),
 	}
 }
 
 func (s *AuthService) GenerateToken(username string, password string) (*AccessTokenResponseDTO, error) {
 	user, err := s.ur.FindByUsername(username)
 	if err != nil {
-		fmt.Printf("User not found!\n")
+		s.logger.Info("User not found")
 		return nil, errors.New("user not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		fmt.Printf("Passwords doesn't match\n")
+		s.logger.Info("Passwords doesn't match")
 		return nil, errors.New("password doesn't match")
 	}
 

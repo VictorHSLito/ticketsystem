@@ -108,22 +108,22 @@ func NewApp() (*App, error) {
 		return nil, fmt.Errorf("failed to initiate seed: %w", err)
 	}
 
+	apiLogger := logger.NewLogger()
+
 	userRepository := repository.NewUserRepository(db)
 	eventRepository := repository.NewEventRepository(db)
 	bookingRepository := repository.NewBookingRepository(db)
 	seatRepository := repository.NewSeatsRepository(db)
 	ticketRepository := repository.NewTicketRepository(db)
 
-	userService := service.NewUserService(userRepository)
+	userService := service.NewUserService(userRepository, apiLogger)
 	eventService := service.NewEventService(eventRepository)
 	bookingService := service.NewBookingService(bookingRepository, userRepository, eventRepository)
 	queueService := service.NewQueueService(sqsClient, queueURL)
-	confirmBookingService := service.NewConfirmBookingService(bookingRepository)
-	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository)
-	authService := service.NewAuthService(userRepository, signKey, verifyKey, expiresIn)
+	confirmBookingService := service.NewConfirmBookingService(bookingRepository, apiLogger)
+	expireBookingService := service.NewExpireBookingService(bookingRepository, seatRepository, ticketRepository, apiLogger)
+	authService := service.NewAuthService(userRepository, signKey, verifyKey, expiresIn, apiLogger)
 	adminService := service.NewAdminService(userRepository)
-
-	apiLogger := logger.NewLogger()
 
 	userHandler := controllers.NewUserController(userService, apiLogger)
 	eventHandler := controllers.NewEventController(eventService, apiLogger)

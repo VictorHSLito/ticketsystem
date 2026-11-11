@@ -1,8 +1,7 @@
 package service
 
 import (
-	"fmt"
-	"log"
+	"errors"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
@@ -21,12 +20,12 @@ func (s *AdminService) SetupAdminUser(username, password, email string) error {
 	users := s.ur.CountUsers()
 
 	if users > 0 {
-		return fmt.Errorf("Admin user can only be created where there are no users in the system.")
+		return errors.New("admin user can only be created where there are no users in the system.")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("Could not be possible to encrypt password")
+		return errors.New("could not be possible to encrypt password")
 	}
 
 	user := &domain.User{Username: username, Password: string(hashedPassword), Email: email, RoleID: 2}

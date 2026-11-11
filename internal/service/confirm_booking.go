@@ -2,29 +2,30 @@ package service
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
 )
 
 type ConfirmBookingService struct {
-	br repository.BookingRepository
+	br     repository.BookingRepository
+	logger *slog.Logger
 }
 
-func NewConfirmBookingService(bookingRepository repository.BookingRepository) *ConfirmBookingService {
-	return &ConfirmBookingService{br: bookingRepository}
+func NewConfirmBookingService(bookingRepository repository.BookingRepository, logger *slog.Logger) *ConfirmBookingService {
+	return &ConfirmBookingService{br: bookingRepository, logger: logger.With("component", "confirm_booking_service")}
 }
 
 func (s *ConfirmBookingService) ConfirmBooking(bookingID uint) error {
 	booking, err := s.br.FindByID(bookingID)
 	if err != nil {
-		log.Println("Booking not found!")
+		s.logger.Info("Booking not found!")
 		return err
 	}
 
 	if booking.BookingStatus != domain.Pending {
-		log.Println("[ERROR] - Tried to execute an unsupported operation")
+		s.logger.Error("Tried to execute an unsupported operation")
 		return errors.ErrUnsupported
 	}
 
