@@ -1,15 +1,19 @@
 package controllers
 
 import (
+	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
 type UserController struct {
-	s *service.UserService
+	s      *service.UserService
+	logger *slog.Logger
 }
 
 type CreateUserDTO struct {
@@ -18,8 +22,8 @@ type CreateUserDTO struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func NewUserController(s *service.UserService) *UserController {
-	return &UserController{s: s}
+func NewUserController(s *service.UserService, logger *slog.Logger) *UserController {
+	return &UserController{s: s, logger: logger.With("component", "user_handler")}
 }
 
 func (h *UserController) CreateUser(c *gin.Context) {
@@ -30,8 +34,13 @@ func (h *UserController) CreateUser(c *gin.Context) {
 	}
 
 	userID, err := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
-	if err != nil {
+	if err != nil && errors.Is(err, domain.ErrUserAlreadyExists) {
 		c.Error(ErrUserAlreadyExists)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
 		return
 	}
 

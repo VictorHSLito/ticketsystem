@@ -2,40 +2,46 @@ package service
 
 import (
 	"errors"
-	"log"
+	"fmt"
+	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
-	r repository.UserRepository
+	r      repository.UserRepository
+	logger *slog.Logger
 }
 
-func NewUserService(r repository.UserRepository) *UserService {
-	return &UserService{r: r}
+func NewUserService(r repository.UserRepository, logger *slog.Logger) *UserService {
+	return &UserService{r: r, logger: logger.With("component", "user_service")}
 }
 
 func (s *UserService) CreateUser(username, email, password string) (uint, error) {
 	if s.isUserAlreadyExists(email) {
-		return 0, errors.New("user already exists")
+		return 0, domain.ErrUserAlreadyExists
 	}
 	user := &domain.User{
 		Username: username,
 		Email:    email,
+		RoleID:   1,
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("error trying to encrypt password, err: ", err.Error())
+		s.logger.Error("Error trying to encrypt password", "error", err)
+		return 0, fmt.Errorf("create user: %w", err)
 	}
 
 	user.Password = string(hashedPassword)
 
-	s.r.Create(user)
+	userCreated, err := s.r.Create(user)
+	if err != nil {
+		return 0, fmt.Errorf("create user: %w", err)
+	}
 
-	return user.ID, nil
+	return userCreated.ID, nil
 }
 
 func (s *UserService) FindByID(userID uint) *domain.User {
@@ -54,7 +60,7 @@ func (s *UserService) isUserAlreadyExists(email string) bool {
 		return true
 	}
 
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		return false
 	}
 

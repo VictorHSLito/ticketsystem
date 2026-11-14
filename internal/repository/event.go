@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/victorhslito/ticketsystem/internal/database"
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -29,7 +30,11 @@ func (r *eventRepositoryImpl) ListEventByID(eventID uint) (*domain.Event, error)
 
 	err := r.db.Preload("Seats").Where("id = ?", eventID).First(&event).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, domain.ErrEventNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("list event by id: %w", err)
 	}
 
 	return &event, nil
@@ -49,7 +54,7 @@ func (r *eventRepositoryImpl) Create(event *domain.Event) (*domain.Event, error)
 	err := r.db.Create(event).Error
 
 	if err != nil && errors.Is(err, gorm.ErrDuplicatedKey) {
-		return nil, err
+		return nil, domain.ErrEventAlreadyExists
 	}
 
 	return event, nil

@@ -1,7 +1,8 @@
 package controllers
 
 import (
-	"log"
+	"errors"
+	"log/slog"
 	"math"
 	"net/http"
 	"strconv"
@@ -12,7 +13,8 @@ import (
 )
 
 type EventController struct {
-	s *service.EventService
+	s      *service.EventService
+	logger *slog.Logger
 }
 
 type CreateEventDTO struct {
@@ -42,8 +44,8 @@ type Pagination struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func NewEventController(s *service.EventService) *EventController {
-	return &EventController{s: s}
+func NewEventController(s *service.EventService, logger *slog.Logger) *EventController {
+	return &EventController{s: s, logger: logger.With("component", "event_controller")}
 }
 
 func (h *EventController) CreateEvent(c *gin.Context) {
@@ -53,7 +55,17 @@ func (h *EventController) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	eventID := h.s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
+	eventID, err := h.s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
+
+	if err != nil && errors.Is(err, domain.ErrEventAlreadyExists) {
+		c.Error(ErrEventAlreadyExists)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
+		return
+	}
 
 	c.Header("Location", "/events/"+strconv.FormatUint(uint64(eventID), 10))
 
@@ -88,14 +100,19 @@ func (h *EventController) ListEventByID(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}
-	event := h.s.ListByID(uint(eventID))
+	event, err := h.s.ListByID(uint(eventID))
 
-	if event == nil {
+	if err != nil && errors.Is(err, domain.ErrEventNotFound) {
 		c.Error(ErrEventNotFound)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -106,7 +123,7 @@ func (h *EventController) ListAllSeats(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}
@@ -129,7 +146,7 @@ func (h *EventController) ListSeatsByStatus(c *gin.Context) {
 	id := c.Param("id")
 	eventID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		log.Println("[ERROR] - Could not parse eventID to uint")
+		h.logger.Error("Could not parse eventID to uint", "error", err)
 		c.Error(ErrInternalServer)
 		return
 	}

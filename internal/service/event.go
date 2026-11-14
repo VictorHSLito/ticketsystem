@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,7 @@ func NewEventService(r repository.EventRepository) *EventService {
 	return &EventService{r: r}
 }
 
-func (s *EventService) CreateEvent(name, description string, quantityOfSeats int) uint {
+func (s *EventService) CreateEvent(name, description string, quantityOfSeats int) (uint, error) {
 	seats := s.createSeats(quantityOfSeats)
 
 	event := &domain.Event{
@@ -27,10 +28,10 @@ func (s *EventService) CreateEvent(name, description string, quantityOfSeats int
 
 	event, err := s.r.Create(event)
 	if err != nil {
-		return 0
+		return 0, fmt.Errorf("create event: %w", err)
 	}
 
-	return event.ID
+	return event.ID, nil
 }
 
 func (s *EventService) createSeats(quantity int) []domain.Seat {
@@ -49,13 +50,13 @@ func (s *EventService) ListEvents(page, pageSize int) ([]*domain.Event, int64) {
 	return s.r.ListAll(page, pageSize)
 }
 
-func (s *EventService) ListByID(eventID uint) *domain.Event {
+func (s *EventService) ListByID(eventID uint) (*domain.Event, error) {
 	event, err := s.r.ListEventByID(eventID)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("list by id: %w", err)
 	}
 
-	return event
+	return event, nil
 }
 
 func (s *EventService) ListAllSeats(eventID uint, page, pageSize int) ([]*domain.Seat, int64) {

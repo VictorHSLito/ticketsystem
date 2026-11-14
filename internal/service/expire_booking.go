@@ -1,24 +1,27 @@
 package service
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
 )
 
 type ExpireBookingService struct {
-	br repository.BookingRepository
-	sr repository.SeatsRepository
-	tr repository.TicketRepository
+	br     repository.BookingRepository
+	sr     repository.SeatsRepository
+	tr     repository.TicketRepository
+	logger *slog.Logger
 }
 
 func NewExpireBookingService(
 	bookingRepository repository.BookingRepository,
 	seatRepository repository.SeatsRepository,
 	ticketRepository repository.TicketRepository,
+	logger *slog.Logger,
 ) *ExpireBookingService {
-	return &ExpireBookingService{br: bookingRepository, sr: seatRepository, tr: ticketRepository}
+	return &ExpireBookingService{br: bookingRepository, sr: seatRepository, tr: ticketRepository, logger: logger.With("component", "expire_booking_service")}
 }
 
 func (s *ExpireBookingService) ExpireBookings(id int) {
@@ -37,8 +40,8 @@ func (s *ExpireBookingService) findBooking(bookingID uint) (*domain.Booking, err
 
 	booking, err := s.br.FindByID(bookingID)
 	if err != nil {
-		log.Println("Booking ID not found!")
-		return nil, err
+		s.logger.Info("Booking ID not found!")
+		return nil, fmt.Errorf("find booking: %w", err)
 	}
 
 	return booking, nil
@@ -73,7 +76,7 @@ func (s *ExpireBookingService) turnSeatsAvailable(bookingID uint) {
 func (s *ExpireBookingService) findSeats(bookingID uint) []uint {
 	tickets, err := s.tr.FindTicketsByBookingID(bookingID)
 	if err != nil {
-		log.Println("[ERROR] - Couldn't proccess tickets")
+		s.logger.Error("Couldn't proccess tickets")
 		return nil
 	}
 
