@@ -32,13 +32,9 @@ func (s *BookingService) FindByID(bookingID uint) (*domain.Booking, error) {
 
 func (s *BookingService) CreateBooking(userID uint, eventID uint, seatCodes []string) (*domain.Booking, error) {
 	// Valida usuário
-	user, err := s.userRepo.ListByID(userID)
+	_, err := s.userRepo.ListByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("create booking: %w", err)
-	}
-
-	if user == nil {
-		return nil, domain.ErrUserNotFound
 	}
 
 	// Valida evento

@@ -8,7 +8,6 @@ import (
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
@@ -37,9 +36,12 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 
 	user.Password = string(hashedPassword)
 
-	s.r.Create(user)
+	userCreated, err := s.r.Create(user)
+	if err != nil {
+		return 0, fmt.Errorf("create user: %w", err)
+	}
 
-	return user.ID, nil
+	return userCreated.ID, nil
 }
 
 func (s *UserService) FindByID(userID uint) *domain.User {
@@ -58,7 +60,7 @@ func (s *UserService) isUserAlreadyExists(email string) bool {
 		return true
 	}
 
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		return false
 	}
 

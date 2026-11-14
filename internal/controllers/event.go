@@ -55,7 +55,17 @@ func (h *EventController) CreateEvent(c *gin.Context) {
 		return
 	}
 
-	eventID := h.s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
+	eventID, err := h.s.CreateEvent(eventDTO.Name, eventDTO.Description, eventDTO.EventSettings.NumberOfSeats)
+
+	if err != nil && errors.Is(err, domain.ErrEventAlreadyExists) {
+		c.Error(ErrEventAlreadyExists)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
+		return
+	}
 
 	c.Header("Location", "/events/"+strconv.FormatUint(uint64(eventID), 10))
 

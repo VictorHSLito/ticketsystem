@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
@@ -33,7 +34,7 @@ func (h *UserController) CreateUser(c *gin.Context) {
 	}
 
 	userID, err := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
-	if err != nil && errors.Is(err, ErrUserAlreadyExists) {
+	if err != nil && errors.Is(err, domain.ErrUserAlreadyExists) {
 		c.Error(ErrUserAlreadyExists)
 		return
 	}

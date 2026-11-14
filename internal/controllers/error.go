@@ -27,15 +27,17 @@ func (e *ApiError) Error() string {
 }
 
 var (
-	ErrUserNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "User not found!"}
-	ErrEventNotFound      = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Event not found!"}
-	ErrBookingNotFound    = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Booking not found"}
-	ErrUserAlreadyExists  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "User Duplicated", Detail: "User with this data already exists"}
-	ErrInternalServer     = &ApiError{Status: http.StatusInternalServerError, Type: "about:blank", Title: "Internal Server Error", Detail: "An unexpected error occurred"}
-	ErrDuplicatedResource = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Duplicated resource!"}
-	ErrSeatNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Seat not found or not available"}
-	ErrSeatAlreadyBooked  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Seat already booked"}
-	ErrAdminSetupDisabled = &ApiError{Status: http.StatusForbidden, Type: "about:blank", Title: "Forbidden Action", Detail: "Admin user already exists"}
+	ErrUserNotFound        = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "User not found!"}
+	ErrEventNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Event not found!"}
+	ErrEventAlreadyExists  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Event Duplicated", Detail: "Event already exists!"}
+	ErrBookingNotFound     = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Booking not found"}
+	ErrInvalidBookingState = &ApiError{Status: http.StatusConflict, Type: "about:blank", Title: "Conflict", Detail: "Booking is not in a state that can be confirmed"}
+	ErrUserAlreadyExists   = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "User Duplicated", Detail: "User with this data already exists"}
+	ErrInternalServer      = &ApiError{Status: http.StatusInternalServerError, Type: "about:blank", Title: "Internal Server Error", Detail: "An unexpected error occurred"}
+	ErrDuplicatedResource  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Duplicated resource!"}
+	ErrSeatNotFound        = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Seat not found or not available"}
+	ErrSeatAlreadyBooked   = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Seat already booked"}
+	ErrAdminSetupDisabled  = &ApiError{Status: http.StatusForbidden, Type: "about:blank", Title: "Forbidden Action", Detail: "Admin user already exists"}
 )
 
 func ErrorHandler() gin.HandlerFunc {

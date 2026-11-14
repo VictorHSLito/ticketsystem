@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -26,7 +25,7 @@ func (s *ConfirmBookingService) ConfirmBooking(bookingID uint) error {
 
 	if booking.BookingStatus != domain.Pending {
 		s.logger.Error("Tried to execute an unsupported operation")
-		return errors.ErrUnsupported
+		return domain.ErrBookingInvalidState
 	}
 
 	booking.BookingStatus = domain.Confirmed

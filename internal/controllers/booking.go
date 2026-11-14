@@ -47,13 +47,22 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 	booking, err := h.bookingService.CreateBooking(bookingDTO.UserID, bookingDTO.EventID, bookingDTO.Seats)
 
 	if err != nil && errors.Is(err, domain.ErrSeatAlreadyBooked) {
-		h.logger.Error("Failed to process booking", "error", err)
 		c.Error(ErrSeatAlreadyBooked)
 		return
 	}
 
 	if err != nil && errors.Is(err, domain.ErrSeatNotFound) {
 		c.Error(ErrSeatNotFound)
+		return
+	}
+
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
+		c.Error(ErrUserNotFound)
+		return
+	}
+
+	if err != nil && errors.Is(err, domain.ErrEventNotFound) {
+		c.Error(ErrEventNotFound)
 		return
 	}
 
@@ -89,8 +98,15 @@ func (h *BookingController) ListBookingByID(c *gin.Context) {
 	}
 
 	booking, err := h.bookingService.FindByID(uint(id))
-	if err != nil {
+
+	if err != nil && errors.Is(err, domain.ErrBookingNotFound) {
 		c.Error(ErrBookingNotFound)
+		return
+	}
+
+	if err != nil {
+		h.logger.Error("Failed to list bookings", "error", err)
+		c.Error(ErrInternalServer)
 		return
 	}
 
@@ -101,11 +117,26 @@ func (h *BookingController) ConfirmBooking(c *gin.Context) {
 	var confirmDTO ConfirmBookingDTO
 
 	if !BindAndValidate(c, &confirmDTO) {
-		c.Error(ErrInternalServer)
 		return
 	}
 
-	h.confirmBookingService.ConfirmBooking(confirmDTO.BookingID)
+	err := h.confirmBookingService.ConfirmBooking(confirmDTO.BookingID)
+
+	if err != nil && errors.Is(err, domain.ErrBookingNotFound) {
+		c.Error(ErrBookingNotFound)
+		return
+	}
+
+	if err != nil && errors.Is(err, domain.ErrBookingInvalidState) {
+		c.Error(ErrInvalidBookingState)
+		return
+	}
+
+	if err != nil {
+		h.logger.Error("Failed to confirm booking", "error", err)
+		c.Error(ErrInternalServer)
+		return
+	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
 }
