@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -49,13 +50,13 @@ func (s *EventService) ListEvents(page, pageSize int) ([]*domain.Event, int64) {
 	return s.r.ListAll(page, pageSize)
 }
 
-func (s *EventService) ListByID(eventID uint) *domain.Event {
+func (s *EventService) ListByID(eventID uint) (*domain.Event, error) {
 	event, err := s.r.ListEventByID(eventID)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("list by id: %w", err)
 	}
 
-	return event
+	return event, nil
 }
 
 func (s *EventService) ListAllSeats(eventID uint, page, pageSize int) ([]*domain.Seat, int64) {

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log/slog"
 	"math"
 	"net/http"
@@ -93,10 +94,15 @@ func (h *EventController) ListEventByID(c *gin.Context) {
 		c.Error(ErrInternalServer)
 		return
 	}
-	event := h.s.ListByID(uint(eventID))
+	event, err := h.s.ListByID(uint(eventID))
 
-	if event == nil {
+	if err != nil && errors.Is(err, domain.ErrEventNotFound) {
 		c.Error(ErrEventNotFound)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
 		return
 	}
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
 	"gorm.io/gorm"
@@ -37,7 +38,11 @@ func (r *userRepositoryImpl) ListByID(userID uint) (*domain.User, error) {
 
 	err := r.db.Where("id = ?", userID).First(&user).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, domain.ErrUserNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("list user by id: %w", err)
 	}
 
 	return &user, nil
@@ -48,7 +53,11 @@ func (r *userRepositoryImpl) ListByEmail(email string) (*domain.User, error) {
 
 	err := r.db.Where("email = ?", email).First(&user).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, domain.ErrUserNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("list user by email: %w", err)
 	}
 
 	return &user, nil
@@ -56,8 +65,12 @@ func (r *userRepositoryImpl) ListByEmail(email string) (*domain.User, error) {
 
 func (r *userRepositoryImpl) Create(user *domain.User) (*domain.User, error) {
 	err := r.db.Create(user).Error
+	if err != nil && errors.Is(err, gorm.ErrDuplicatedKey) {
+		return nil, domain.ErrUserAlreadyExists
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create user: %w", err)
 	}
 
 	return user, nil
@@ -66,7 +79,7 @@ func (r *userRepositoryImpl) Create(user *domain.User) (*domain.User, error) {
 func (r *userRepositoryImpl) Update(user *domain.User) (*domain.User, error) {
 	err := r.db.Save(user).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("update user: %w", err)
 	}
 
 	return user, nil
@@ -76,8 +89,12 @@ func (r *userRepositoryImpl) FindByUsername(username string) (*domain.User, erro
 	var user domain.User
 
 	err := r.db.Where("username = ?", username).Find(&user).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ErrUserNotFound
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("find by username: %w", err)
 	}
 
 	return &user, nil

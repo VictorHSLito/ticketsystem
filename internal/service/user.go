@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -21,7 +22,7 @@ func NewUserService(r repository.UserRepository, logger *slog.Logger) *UserServi
 
 func (s *UserService) CreateUser(username, email, password string) (uint, error) {
 	if s.isUserAlreadyExists(email) {
-		return 0, errors.New("user already exists")
+		return 0, domain.ErrUserAlreadyExists
 	}
 	user := &domain.User{
 		Username: username,
@@ -31,7 +32,7 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error("Error trying to encrypt password", "error", err)
-		return 0, errors.New("")
+		return 0, fmt.Errorf("create user: %w", err)
 	}
 
 	user.Password = string(hashedPassword)

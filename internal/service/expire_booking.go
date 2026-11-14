@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -39,8 +40,8 @@ func (s *ExpireBookingService) findBooking(bookingID uint) (*domain.Booking, err
 
 	booking, err := s.br.FindByID(bookingID)
 	if err != nil {
-		s.logger.Info("Booking ID not foun!")
-		return nil, err
+		s.logger.Info("Booking ID not found!")
+		return nil, fmt.Errorf("find booking: %w", err)
 	}
 
 	return booking, nil

@@ -22,7 +22,7 @@ func NewBookingRepository(db *gorm.DB) BookingRepository {
 func (r *bookingRepositoryImpl) FindByID(bookingID uint) (*domain.Booking, error) {
 	var booking domain.Booking
 	if err := r.db.First(&booking, bookingID).Error; err != nil {
-		return nil, err
+		return nil, domain.ErrBookingNotFound
 	}
 	return &booking, nil
 }

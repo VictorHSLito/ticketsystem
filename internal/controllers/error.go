@@ -33,6 +33,9 @@ var (
 	ErrUserAlreadyExists  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "User Duplicated", Detail: "User with this data already exists"}
 	ErrInternalServer     = &ApiError{Status: http.StatusInternalServerError, Type: "about:blank", Title: "Internal Server Error", Detail: "An unexpected error occurred"}
 	ErrDuplicatedResource = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Duplicated resource!"}
+	ErrSeatNotFound       = &ApiError{Status: http.StatusNotFound, Type: "about:blank", Title: "Not Found", Detail: "Seat not found or not available"}
+	ErrSeatAlreadyBooked  = &ApiError{Status: http.StatusBadRequest, Type: "about:blank", Title: "Bad Request", Detail: "Seat already booked"}
+	ErrAdminSetupDisabled = &ApiError{Status: http.StatusForbidden, Type: "about:blank", Title: "Forbidden Action", Detail: "Admin user already exists"}
 )
 
 func ErrorHandler() gin.HandlerFunc {

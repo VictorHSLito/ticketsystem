@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -32,8 +33,13 @@ func (h *UserController) CreateUser(c *gin.Context) {
 	}
 
 	userID, err := h.s.CreateUser(createUserDTO.Username, createUserDTO.Email, createUserDTO.Password)
-	if err != nil {
+	if err != nil && errors.Is(err, ErrUserAlreadyExists) {
 		c.Error(ErrUserAlreadyExists)
+		return
+	}
+
+	if err != nil {
+		c.Error(ErrInternalServer)
 		return
 	}
 

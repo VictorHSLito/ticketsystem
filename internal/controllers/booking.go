@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
@@ -43,6 +45,18 @@ func (h *BookingController) CreateBooking(c *gin.Context) {
 	}
 
 	booking, err := h.bookingService.CreateBooking(bookingDTO.UserID, bookingDTO.EventID, bookingDTO.Seats)
+
+	if err != nil && errors.Is(err, domain.ErrSeatAlreadyBooked) {
+		h.logger.Error("Failed to process booking", "error", err)
+		c.Error(ErrSeatAlreadyBooked)
+		return
+	}
+
+	if err != nil && errors.Is(err, domain.ErrSeatNotFound) {
+		c.Error(ErrSeatNotFound)
+		return
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to process booking", "error", err)
 		c.Error(ErrInternalServer)

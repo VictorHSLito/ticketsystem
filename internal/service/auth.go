@@ -2,11 +2,12 @@ package service
 
 import (
 	"crypto/rsa"
-	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -51,13 +52,13 @@ func (s *AuthService) GenerateToken(username string, password string) (*AccessTo
 	user, err := s.ur.FindByUsername(username)
 	if err != nil {
 		s.logger.Info("User not found")
-		return nil, errors.New("user not found")
+		return nil, domain.ErrUserNotFound
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		s.logger.Info("Passwords doesn't match")
-		return nil, errors.New("password doesn't match")
+		return nil, fmt.Errorf("generate token: %w", err)
 	}
 
 	issuedAt := jwt.NewNumericDate(time.Now())

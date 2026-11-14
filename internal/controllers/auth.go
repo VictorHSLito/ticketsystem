@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
@@ -30,10 +32,14 @@ func (h *AuthController) GenerateToken(c *gin.Context) {
 	}
 
 	token, err := h.authService.GenerateToken(loginRequest.Username, loginRequest.Password)
-	if err != nil {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		c.Error(ErrUserNotFound)
 		return
 	}
 
+	if err != nil {
+		c.Error(ErrInternalServer)
+		return
+	}
 	c.JSON(http.StatusOK, token)
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -20,8 +21,7 @@ func NewConfirmBookingService(bookingRepository repository.BookingRepository, lo
 func (s *ConfirmBookingService) ConfirmBooking(bookingID uint) error {
 	booking, err := s.br.FindByID(bookingID)
 	if err != nil {
-		s.logger.Info("Booking not found!")
-		return err
+		return fmt.Errorf("confirm booking: %w", err)
 	}
 
 	if booking.BookingStatus != domain.Pending {

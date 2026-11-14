@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/victorhslito/ticketsystem/internal/domain"
@@ -32,25 +32,29 @@ func (s *BookingService) FindByID(bookingID uint) (*domain.Booking, error) {
 
 func (s *BookingService) CreateBooking(userID uint, eventID uint, seatCodes []string) (*domain.Booking, error) {
 	// Valida usuário
-	user, _ := s.userRepo.ListByID(userID)
+	user, err := s.userRepo.ListByID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("create booking: %w", err)
+	}
+
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, domain.ErrUserNotFound
 	}
 
 	// Valida evento
-	event, _ := s.eventRepo.ListEventByID(eventID)
-	if event == nil {
-		return nil, errors.New("event not found")
+	event, err := s.eventRepo.ListEventByID(eventID)
+	if err != nil {
+		return nil, fmt.Errorf("create booking: %w", err)
 	}
 
 	// Valida e mapeia os assentos
 	bookedSeats, err := verifySeats(event.Seats, seatCodes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create booking: %w", err)
 	}
 
 	if len(bookedSeats) == 0 {
-		return nil, errors.New("no valid or available seats")
+		return nil, domain.ErrSeatNotValidOrNotAvailable
 	}
 
 	booking := &domain.Booking{
@@ -86,11 +90,11 @@ func verifySeats(seats []domain.Seat, seatCodes []string) (map[uint]string, erro
 	for _, code := range seatCodes {
 		seat, exists := seatMap[code]
 		if !exists {
-			return nil, errors.New("seat" + code + "does not exists for this event")
+			return nil, fmt.Errorf("seat %q: %w", code, domain.ErrSeatNotFound)
 		}
 
 		if seat.SeatStatus != domain.StatusAvailable {
-			return nil, errors.New("seat" + code + "is already booked")
+			return nil, fmt.Errorf("seat %q: %w", code, domain.ErrSeatAlreadyBooked)
 		}
 
 		bookingSeats[seat.ID] = code

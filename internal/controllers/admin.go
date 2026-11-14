@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/victorhslito/ticketsystem/internal/domain"
 	"github.com/victorhslito/ticketsystem/internal/service"
 )
 
@@ -31,6 +33,11 @@ func (h *AdminController) CreateAdmin(c *gin.Context) {
 	}
 
 	err := h.adminService.SetupAdminUser(createAdminDTO.Username, createAdminDTO.Password, createAdminDTO.Email)
+	if err != nil && errors.Is(err, domain.ErrAdminSetupDisabled) {
+		c.Error(ErrAdminSetupDisabled)
+		return
+	}
+
 	if err != nil {
 		c.Error(ErrInternalServer)
 		return
